@@ -1,0 +1,24 @@
+:root {
+  --ts-black: #0e1010;
+  --ts-dark: #181919;
+  --ts-yellow: #e8f20c;
+  --ts-orange: #ff5b22;
+  --ts-light: #dedcd5;
+  --ts-gray: #6b6c68;
+  --ts-line: #2c2e2d;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background-color: var(--ts-black);
+  color: var(--ts-light);
+  font-family: 'Inter', sans-serif;
+}
+
+.font-display {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}

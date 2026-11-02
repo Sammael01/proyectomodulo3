@@ -1,0 +1,23 @@
+<section class="ts-hero">
+  <div class="ts-shape ts-shape-olive d-none d-md-block"></div>
+  <div class="ts-shape ts-shape-orange d-none d-md-block"></div>
+  <span class="ts-tag font-display d-none d-md-inline-block">{{ tag() }}</span>
+
+  <div class="container-fluid px-4 px-lg-5 h-100">
+    <div class="row h-100 align-items-center">
+      <div class="col-12 col-md-7 col-lg-5 offset-lg-0 ps-lg-5 ts-content">
+        <span class="ts-eyebrow">{{ eyebrow() }}</span>
+
+        <h1 class="ts-title font-display">
+          @for (line of titleLines(); track line.text) {
+            <span class="ts-title-line" [class.ts-title-accent]="line.accent">{{ line.text }}</span>
+          }
+        </h1>
+
+        <p class="ts-description">{{ description() }}</p>
+
+        <a href="#" class="btn ts-btn">{{ cta() }}</a>
+      </div>
+    </div>
+  </div>
+</section>

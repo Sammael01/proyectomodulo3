@@ -1,0 +1,82 @@
+:host {
+  position: relative;
+  z-index: 3;
+  display: block;
+}
+
+.ts-topbar {
+  background-color: var(--ts-yellow);
+  color: #2a2c08;
+}
+
+.ts-topbar-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ts-navbar {
+  min-height: 82px;
+  border-bottom: 1px solid var(--ts-line);
+}
+
+.ts-brand {
+  background-color: var(--ts-yellow);
+  color: var(--ts-black);
+  padding: 0.1rem 0.9rem;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.ts-brand:hover {
+  color: var(--ts-black);
+}
+
+.ts-link {
+  color: #b9b9b4 !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.ts-link::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0.2rem;
+  height: 2px;
+  background-color: var(--ts-yellow);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+
+.ts-link:hover {
+  color: var(--ts-light) !important;
+}
+
+.ts-link:hover::after {
+  transform: scaleX(1);
+}
+
+.ts-circle {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #8a8b86;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b9b9b4;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ts-circle:hover {
+  border-color: var(--ts-yellow);
+  color: var(--ts-yellow);
+}

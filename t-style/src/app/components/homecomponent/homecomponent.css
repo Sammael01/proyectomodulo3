@@ -1,0 +1,110 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.ts-hero {
+  position: relative;
+  min-height: calc(100vh - 82px - 36px - 50px);
+  padding: 4rem 0;
+}
+
+.ts-content {
+  position: relative;
+  z-index: 2;
+}
+
+.ts-eyebrow {
+  display: inline-block;
+  color: var(--ts-yellow);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding-bottom: 0.4rem;
+  border-bottom: 3px solid var(--ts-yellow);
+  margin-bottom: 1.75rem;
+}
+
+.ts-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.ts-title-line {
+  display: inline-block;
+  background-color: var(--ts-light);
+  color: var(--ts-black);
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1.1;
+  padding: 0.05em 0.3em;
+}
+
+.ts-title-accent {
+  background-color: var(--ts-orange);
+}
+
+.ts-description {
+  max-width: 440px;
+  color: #8f908b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2.25rem;
+}
+
+.ts-btn {
+  background-color: var(--ts-yellow);
+  color: var(--ts-black);
+  border: none;
+  border-radius: 0;
+  padding: 0.85rem 2.4rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ts-btn:hover {
+  background-color: var(--ts-yellow);
+  color: var(--ts-black);
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0 var(--ts-orange);
+}
+
+.ts-shape {
+  position: absolute;
+  z-index: 1;
+}
+
+.ts-shape-olive {
+  top: 10%;
+  left: 44.5%;
+  width: 15%;
+  height: 52%;
+  background: linear-gradient(90deg, #1d1d10 0%, #3a3a12 50%, #5d6812 100%);
+  clip-path: polygon(16% 0, 100% 20%, 85% 100%, 0 82%);
+}
+
+.ts-shape-orange {
+  right: 3.5%;
+  bottom: 0;
+  width: 22%;
+  height: 72%;
+  background: linear-gradient(90deg, #e2531f 0%, var(--ts-orange) 15%);
+  clip-path: polygon(24% 0, 100% 14%, 84% 100%, 0 100%);
+}
+
+.ts-tag {
+  position: absolute;
+  right: 5%;
+  bottom: 6%;
+  z-index: 2;
+  background-color: var(--ts-yellow);
+  color: var(--ts-black);
+  font-size: 0.85rem;
+  padding: 0 1.1rem;
+}

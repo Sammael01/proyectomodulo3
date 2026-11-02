@@ -1,0 +1,33 @@
+:host {
+  position: relative;
+  z-index: 3;
+  display: block;
+}
+
+.ts-features {
+  background-color: var(--ts-dark);
+  border-top: 1px solid var(--ts-line);
+  border-bottom: 1px solid var(--ts-line);
+}
+
+.ts-feature {
+  display: inline-block;
+  color: #8a8b86;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding-bottom: 0.3rem;
+  border-bottom: 3px solid var(--ts-gray);
+}
+
+.ts-feature-accent {
+  color: var(--ts-orange);
+  border-bottom-color: var(--ts-orange);
+}
+
+.ts-bottom {
+  background-color: var(--ts-black);
+  color: #5d5e5a;
+  font-size: 0.75rem;
+}
