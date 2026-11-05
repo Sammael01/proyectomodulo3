@@ -1,4 +1,4 @@
-package com.tstyle.backend;
+package co.edu.unbosque.tstyle;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

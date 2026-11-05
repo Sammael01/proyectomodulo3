@@ -1,4 +1,4 @@
-package com.tstyle.backend;
+package co.edu.unbosque.tstyle;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
