@@ -31,3 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# ==========================================
+# JAVA COMPILED FILES AND ARTIFACTS
+# ==========================================
+
+*.class
+*.jar
+!/.mvn/wrapper/maven-wrapper.jar
+*.war
+*.ear
+
+# ==========================================
+# JAVA BUILD OUTPUT
+# ==========================================
+
+bin/
