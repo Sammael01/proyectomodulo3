@@ -1,65 +1,114 @@
 
 package co.edu.unbosque.tstyle.user.model;
 
+import java.time.LocalDateTime;
+
+import co.edu.unbosque.tstyle.user.enums.Role;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
 /**
  * Representa un usuario registrado en la plataforma T Style.
  *
- * Contiene la información básica necesaria para identificar al usuario
- * y gestionar su acceso a la aplicación.
+ * Esta clase define la información de los usuarios que se almacenará
+ * en la base de datos.
  *
  * @author Equipo T Style
  */
+@Entity
+@Table(name = "tstyle_users")
 public class User {
 
     /**
      * Identificador único del usuario.
      */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
      * Nombre completo del usuario.
      */
+    @Column(nullable = false, length = 100)
     private String name;
 
     /**
      * Correo electrónico utilizado para iniciar sesión.
      */
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
 
     /**
      * Contraseña almacenada mediante un algoritmo de hash seguro.
      */
+    @Column(nullable = false, length = 255)
     private String password;
 
     /**
      * Rol asignado al usuario dentro de la plataforma.
      */
-    private String role;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
 
     /**
      * Indica si el usuario ha verificado su correo electrónico.
      */
-    private Boolean emailVerified;
+    @Column(nullable = false)
+    private boolean emailVerified;
 
     /**
-     * Constructor vacío de la clase User.
+     * Indica si la cuenta del usuario está habilitada.
+     */
+    @Column(nullable = false)
+    private boolean enabled;
+
+    /**
+     * Fecha y hora de creación del usuario.
+     */
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * Constructor vacío requerido por JPA.
      */
     public User() {
-        super();
+        this.emailVerified = false;
+        this.enabled = true;
     }
 
     /**
-     * Constructor con todos los atributos del usuario.
+     * Constructor con los atributos principales del usuario.
+     *
+     * @param name nombre completo
+     * @param email correo electrónico
+     * @param password contraseña cifrada mediante hash
+     * @param role rol asignado
      */
-    public User(Long id, String name, String email, String password,
-                String role, Boolean emailVerified) {
-        super();
-        this.id = id;
+    public User(String name, String email, String password, Role role) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
-        this.emailVerified = emailVerified;
+        this.emailVerified = false;
+        this.enabled = true;
+    }
+
+    /**
+     * Establece la fecha de creación antes de guardar el usuario.
+     */
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
     public Long getId() {
@@ -94,19 +143,35 @@ public class User {
         this.password = password;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 
-    public Boolean getEmailVerified() {
+    public boolean isEmailVerified() {
         return emailVerified;
     }
 
-    public void setEmailVerified(Boolean emailVerified) {
+    public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
