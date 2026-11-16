@@ -2,13 +2,21 @@
 package co.edu.unbosque.tstyle.user.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,9 +27,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import co.edu.unbosque.tstyle.email.EmailCenter;
+import co.edu.unbosque.tstyle.exception.BusinessException;
 import co.edu.unbosque.tstyle.exception.DuplicateResourceException;
 import co.edu.unbosque.tstyle.security.dto.MessageResponse;
 import co.edu.unbosque.tstyle.security.dto.RegisterRequest;
+import co.edu.unbosque.tstyle.security.dto.ResendVerificationRequest;
+import co.edu.unbosque.tstyle.security.dto.VerifyEmailRequest;
 import co.edu.unbosque.tstyle.user.enums.Role;
 import co.edu.unbosque.tstyle.user.model.User;
 import co.edu.unbosque.tstyle.user.repository.UserRepository;
@@ -40,25 +52,31 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private EmailCenter emailCenter;
+
     @InjectMocks
     private UserService userService;
 
     private RegisterRequest registerRequest;
 
-    /**
-     * Prepara los datos necesarios para cada prueba.
-     */
     @BeforeEach
     void setUp() {
+
         registerRequest = new RegisterRequest(
             "Daniel Zapata",
             "daniel@tstyle.com",
             "Password123!"
         );
+
+        lenient().when(passwordEncoder.encode(any(String.class)))
+        .thenAnswer(invocation ->
+            "hashed-" + invocation.getArgument(0)
+        );
     }
 
     /**
-     * Comprueba que un usuario pueda registrarse correctamente.
+     * Comprueba el registro exitoso y el envío del código.
      */
     @Test
     void testRegisterUserSuccessfully() {
@@ -66,27 +84,28 @@ class UserServiceTest {
         when(userRepository.existsByEmail("daniel@tstyle.com"))
             .thenReturn(false);
 
-        when(passwordEncoder.encode("Password123!"))
-            .thenReturn("$2a$10$hashedPasswordExample");
-
         MessageResponse response = userService.registerUser(registerRequest);
 
-        assertEquals("Usuario registrado correctamente", response.getMessage());
+        assertEquals(
+            "Usuario registrado. Revisa tu correo para verificar la cuenta",
+            response.getMessage()
+        );
 
         verify(userRepository).save(any(User.class));
+        verify(emailCenter).sendVerificationCode(
+            eq("daniel@tstyle.com"),
+            any(String.class)
+        );
     }
 
     /**
-     * Comprueba que la contraseña se almacene mediante un hash.
+     * Comprueba que la contraseña se almacene cifrada.
      */
     @Test
     void testRegisterUserEncryptsPassword() {
 
         when(userRepository.existsByEmail("daniel@tstyle.com"))
             .thenReturn(false);
-
-        when(passwordEncoder.encode("Password123!"))
-            .thenReturn("$2a$10$hashedPasswordExample");
 
         userService.registerUser(registerRequest);
 
@@ -97,20 +116,17 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
 
         assertNotEquals("Password123!", savedUser.getPassword());
-        assertEquals("$2a$10$hashedPasswordExample", savedUser.getPassword());
+        assertEquals("hashed-Password123!", savedUser.getPassword());
     }
 
     /**
-     * Comprueba que el registro asigne automáticamente el rol CLIENT.
+     * Comprueba que el usuario quede pendiente de verificación.
      */
     @Test
-    void testRegisterUserAssignsClientRole() {
+    void testRegisterUserRemainsDisabled() {
 
         when(userRepository.existsByEmail("daniel@tstyle.com"))
             .thenReturn(false);
-
-        when(passwordEncoder.encode("Password123!"))
-            .thenReturn("$2a$10$hashedPasswordExample");
 
         userService.registerUser(registerRequest);
 
@@ -118,7 +134,14 @@ class UserServiceTest {
 
         verify(userRepository).save(userCaptor.capture());
 
-        assertEquals(Role.CLIENT, userCaptor.getValue().getRole());
+        User savedUser = userCaptor.getValue();
+
+        assertEquals(Role.CLIENT, savedUser.getRole());
+        assertFalse(savedUser.isEmailVerified());
+        assertFalse(savedUser.isEnabled());
+        assertEquals(0, savedUser.getVerificationAttempts());
+        assertTrue(savedUser.getVerificationExpiresAt().isAfter(LocalDateTime.now()));
+        assertNotEquals(null, savedUser.getVerificationCodeHash());
     }
 
     /**
@@ -131,9 +154,6 @@ class UserServiceTest {
 
         when(userRepository.existsByEmail("daniel@tstyle.com"))
             .thenReturn(false);
-
-        when(passwordEncoder.encode("Password123!"))
-            .thenReturn("$2a$10$hashedPasswordExample");
 
         userService.registerUser(registerRequest);
 
@@ -159,5 +179,225 @@ class UserServiceTest {
         );
 
         verify(userRepository, never()).save(any(User.class));
+        verify(emailCenter, never()).sendVerificationCode(
+            any(String.class),
+            any(String.class)
+        );
     }
+
+    /**
+     * Comprueba que un código correcto active la cuenta.
+     */
+    @Test
+    void testVerifyEmailSuccessfully() {
+
+        User user = createUnverifiedUser();
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches("123456", "hashed-code"))
+            .thenReturn(true);
+
+        MessageResponse response = userService.verifyEmail(
+            new VerifyEmailRequest("daniel@tstyle.com", "123456")
+        );
+
+        assertEquals("Correo verificado correctamente", response.getMessage());
+        assertTrue(user.isEmailVerified());
+        assertTrue(user.isEnabled());
+        assertEquals(null, user.getVerificationCodeHash());
+        assertEquals(0, user.getVerificationAttempts());
+
+        verify(userRepository).save(user);
+    }
+
+    /**
+     * Comprueba que un código incorrecto aumente los intentos.
+     */
+    @Test
+    void testVerifyEmailWithIncorrectCode() {
+
+        User user = createUnverifiedUser();
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches("999999", "hashed-code"))
+            .thenReturn(false);
+
+        assertThrows(
+            BusinessException.class,
+            () -> userService.verifyEmail(
+                new VerifyEmailRequest("daniel@tstyle.com", "999999")
+            )
+        );
+
+        assertEquals(1, user.getVerificationAttempts());
+        assertFalse(user.isEmailVerified());
+    }
+
+    /**
+     * Comprueba que se bloquee la verificación después de cinco intentos.
+     */
+    @Test
+    void testVerifyEmailWithMaximumAttempts() {
+
+        User user = createUnverifiedUser();
+        user.setVerificationAttempts(5);
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        assertThrows(
+            BusinessException.class,
+            () -> userService.verifyEmail(
+                new VerifyEmailRequest("daniel@tstyle.com", "123456")
+            )
+        );
+
+        assertEquals(5, user.getVerificationAttempts());
+
+        verify(passwordEncoder, never()).matches(
+            any(String.class),
+            any(String.class)
+        );
+    }
+
+    /**
+     * Comprueba que no se permita utilizar un código vencido.
+     */
+    @Test
+    void testVerifyEmailWithExpiredCode() {
+
+        User user = createUnverifiedUser();
+        user.setVerificationExpiresAt(LocalDateTime.now().minusMinutes(1));
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        assertThrows(
+            BusinessException.class,
+            () -> userService.verifyEmail(
+                new VerifyEmailRequest("daniel@tstyle.com", "123456")
+            )
+        );
+
+        assertEquals(null, user.getVerificationCodeHash());
+        assertEquals(null, user.getVerificationExpiresAt());
+
+        verify(passwordEncoder, never()).matches(
+            any(String.class),
+            any(String.class)
+        );
+    }
+
+    /**
+     * Comprueba que no se pueda verificar una cuenta dos veces.
+     */
+    @Test
+    void testVerifyEmailAlreadyVerified() {
+
+        User user = createUnverifiedUser();
+        user.setEmailVerified(true);
+        user.setEnabled(true);
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        assertThrows(
+            BusinessException.class,
+            () -> userService.verifyEmail(
+                new VerifyEmailRequest("daniel@tstyle.com", "123456")
+            )
+        );
+
+        verify(passwordEncoder, never()).matches(
+            any(String.class),
+            any(String.class)
+        );
+
+        verify(userRepository, never()).save(user);
+    }
+
+    /**
+     * Comprueba que se pueda solicitar un nuevo código.
+     */
+    @Test
+    void testResendVerificationCodeSuccessfully() {
+
+        User user = createUnverifiedUser();
+        user.setLastVerificationSentAt(LocalDateTime.now().minusMinutes(2));
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        MessageResponse response = userService.resendVerificationCode(
+            new ResendVerificationRequest("daniel@tstyle.com")
+        );
+
+        assertEquals(
+            "Se envió un nuevo código de verificación",
+            response.getMessage()
+        );
+
+        assertEquals(0, user.getVerificationAttempts());
+        assertTrue(user.getVerificationExpiresAt().isAfter(LocalDateTime.now()));
+
+        verify(userRepository).save(user);
+        verify(emailCenter).sendVerificationCode(
+            eq("daniel@tstyle.com"),
+            any(String.class)
+        );
+    }
+
+    /**
+     * Comprueba que se respete el tiempo de espera para reenviar un código.
+     */
+    @Test
+    void testResendVerificationCodeTooSoon() {
+
+        User user = createUnverifiedUser();
+        user.setLastVerificationSentAt(LocalDateTime.now().minusSeconds(30));
+
+        when(userRepository.findByEmail("daniel@tstyle.com"))
+            .thenReturn(Optional.of(user));
+
+        assertThrows(
+            BusinessException.class,
+            () -> userService.resendVerificationCode(
+                new ResendVerificationRequest("daniel@tstyle.com")
+            )
+        );
+
+        verify(userRepository, never()).save(user);
+
+        verify(emailCenter, never()).sendVerificationCode(
+            any(String.class),
+            any(String.class)
+        );
+    }
+
+    /**
+     * Crea un usuario pendiente de verificación para las pruebas.
+     *
+     * @return usuario de prueba
+     */
+    private User createUnverifiedUser() {
+
+        User user = new User(
+            "Daniel Zapata",
+            "daniel@tstyle.com",
+            "hashed-password",
+            Role.CLIENT
+        );
+
+        user.setVerificationCodeHash("hashed-code");
+        user.setVerificationExpiresAt(LocalDateTime.now().plusMinutes(10));
+        user.setVerificationAttempts(0);
+        user.setLastVerificationSentAt(LocalDateTime.now().minusMinutes(2));
+
+        return user;
+    }
+
 }

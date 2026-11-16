@@ -71,6 +71,28 @@ public class User {
     private boolean enabled;
 
     /**
+     * Código de verificación almacenado mediante hash.
+     */
+    @Column(length = 255)
+    private String verificationCodeHash;
+
+    /**
+     * Fecha y hora de vencimiento del código.
+     */
+    private LocalDateTime verificationExpiresAt;
+
+    /**
+     * Número de intentos de verificación realizados.
+     */
+    @Column(nullable = false)
+    private int verificationAttempts;
+
+    /**
+     * Fecha y hora del último envío del código.
+     */
+    private LocalDateTime lastVerificationSentAt;
+
+    /**
      * Fecha y hora de creación del usuario.
      */
     @Column(nullable = false, updatable = false)
@@ -81,7 +103,8 @@ public class User {
      */
     public User() {
         this.emailVerified = false;
-        this.enabled = true;
+        this.enabled = false;
+        this.verificationAttempts = 0;
     }
 
     /**
@@ -98,7 +121,8 @@ public class User {
         this.password = password;
         this.role = role;
         this.emailVerified = false;
-        this.enabled = true;
+        this.enabled = false;
+        this.verificationAttempts = 0;
     }
 
     /**
@@ -165,6 +189,38 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getVerificationCodeHash() {
+        return verificationCodeHash;
+    }
+
+    public void setVerificationCodeHash(String verificationCodeHash) {
+        this.verificationCodeHash = verificationCodeHash;
+    }
+
+    public LocalDateTime getVerificationExpiresAt() {
+        return verificationExpiresAt;
+    }
+
+    public void setVerificationExpiresAt(LocalDateTime verificationExpiresAt) {
+        this.verificationExpiresAt = verificationExpiresAt;
+    }
+
+    public int getVerificationAttempts() {
+        return verificationAttempts;
+    }
+
+    public void setVerificationAttempts(int verificationAttempts) {
+        this.verificationAttempts = verificationAttempts;
+    }
+
+    public LocalDateTime getLastVerificationSentAt() {
+        return lastVerificationSentAt;
+    }
+
+    public void setLastVerificationSentAt(LocalDateTime lastVerificationSentAt) {
+        this.lastVerificationSentAt = lastVerificationSentAt;
     }
 
     public LocalDateTime getCreatedAt() {
