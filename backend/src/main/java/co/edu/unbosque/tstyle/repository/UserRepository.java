@@ -1,12 +1,12 @@
 
-package co.edu.unbosque.tstyle.user.repository;
+package co.edu.unbosque.tstyle.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import co.edu.unbosque.tstyle.user.model.User;
+import co.edu.unbosque.tstyle.model.User;
 
 /**
  * Proporciona las operaciones de acceso a datos para los usuarios de T Style.

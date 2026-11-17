@@ -1,4 +1,4 @@
-package co.edu.unbosque.tstyle.user.enums;
+package co.edu.unbosque.tstyle.enums;
 
 /**
  * Define los roles disponibles para los usuarios de T Style.

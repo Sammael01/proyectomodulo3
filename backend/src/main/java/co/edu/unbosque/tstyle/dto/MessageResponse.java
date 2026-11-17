@@ -1,4 +1,4 @@
-package co.edu.unbosque.tstyle.security.dto;
+package co.edu.unbosque.tstyle.dto;
 
 /**
  * Representa un mensaje de respuesta enviado

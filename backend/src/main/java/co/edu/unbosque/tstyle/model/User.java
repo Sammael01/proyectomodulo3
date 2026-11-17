@@ -1,9 +1,9 @@
 
-package co.edu.unbosque.tstyle.user.model;
+package co.edu.unbosque.tstyle.model;
 
 import java.time.LocalDateTime;
 
-import co.edu.unbosque.tstyle.user.enums.Role;
+import co.edu.unbosque.tstyle.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -105,7 +105,7 @@ public class User {
      * Establece la fecha de creación antes de guardar el usuario.
      */
     @PrePersist
-    protected void onCreate() {
+	public void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }

@@ -1,5 +1,5 @@
 
-package co.edu.unbosque.tstyle.user.service;
+package co.edu.unbosque.tstyle.service;
 
 import java.util.Locale;
 
@@ -7,12 +7,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.unbosque.tstyle.dto.MessageResponse;
+import co.edu.unbosque.tstyle.dto.RegisterRequest;
+import co.edu.unbosque.tstyle.enums.Role;
 import co.edu.unbosque.tstyle.exception.DuplicateResourceException;
-import co.edu.unbosque.tstyle.security.dto.MessageResponse;
-import co.edu.unbosque.tstyle.security.dto.RegisterRequest;
-import co.edu.unbosque.tstyle.user.enums.Role;
-import co.edu.unbosque.tstyle.user.model.User;
-import co.edu.unbosque.tstyle.user.repository.UserRepository;
+import co.edu.unbosque.tstyle.model.User;
+import co.edu.unbosque.tstyle.repository.UserRepository;
 
 /**
  * Contiene la lógica de negocio relacionada con los usuarios de T Style.

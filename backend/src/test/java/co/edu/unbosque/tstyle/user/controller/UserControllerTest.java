@@ -14,10 +14,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import co.edu.unbosque.tstyle.controller.UserController;
+import co.edu.unbosque.tstyle.dto.MessageResponse;
+import co.edu.unbosque.tstyle.dto.RegisterRequest;
 import co.edu.unbosque.tstyle.exception.DuplicateResourceException;
-import co.edu.unbosque.tstyle.security.dto.MessageResponse;
-import co.edu.unbosque.tstyle.security.dto.RegisterRequest;
-import co.edu.unbosque.tstyle.user.service.UserService;
+import co.edu.unbosque.tstyle.service.UserService;
 
 /**
  * Pruebas HTTP para el controlador de usuarios.

@@ -1,5 +1,5 @@
 
-package co.edu.unbosque.tstyle.user.controller;
+package co.edu.unbosque.tstyle.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import co.edu.unbosque.tstyle.security.dto.MessageResponse;
-import co.edu.unbosque.tstyle.security.dto.RegisterRequest;
-import co.edu.unbosque.tstyle.user.service.UserService;
-
+import co.edu.unbosque.tstyle.dto.MessageResponse;
+import co.edu.unbosque.tstyle.dto.RegisterRequest;
+import co.edu.unbosque.tstyle.service.UserService;
 import jakarta.validation.Valid;
 
 /**
