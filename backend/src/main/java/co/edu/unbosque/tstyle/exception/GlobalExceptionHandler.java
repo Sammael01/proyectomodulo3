@@ -1,19 +1,25 @@
+
 package co.edu.unbosque.tstyle.exception;
 
 import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Centraliza el manejo de excepciones generadas
  * durante las solicitudes HTTP de T Style.
  *
+ * Permite devolver respuestas estructuradas para los diferentes
+ * errores que pueden ocurrir durante la ejecución de la aplicación.
+ *
  * @author Equipo T Style
+ * @version 1.0
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -63,6 +69,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja solicitudes realizadas a endpoints que no existen.
+     *
+     * @param exception excepción generada cuando no se encuentra la ruta
+     * @param request solicitud HTTP
+     * @return respuesta HTTP indicando que el endpoint no existe
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+            NoResourceFoundException exception, WebRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "ENDPOINT_NOT_FOUND",
+                "El endpoint solicitado no existe",
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
      * Maneja conflictos ocasionados por recursos duplicados.
      *
      * @param exception excepción generada
@@ -85,7 +113,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja errores producidos por validaciones de los DTO.
+     * Maneja errores producidos por las validaciones de los DTO.
      *
      * @param exception excepción de validación
      * @param request solicitud HTTP
