@@ -18,7 +18,8 @@ import jakarta.persistence.Table;
  * Representa un usuario registrado en la plataforma T Style.
  *
  * Esta clase define la información de los usuarios que se almacenará
- * en la base de datos.
+ * en la base de datos, incluyendo los datos de verificación,
+ * recuperación y control de versiones de autenticación.
  *
  * @author Equipo T Style
  */
@@ -77,7 +78,7 @@ public class User {
     private String verificationCodeHash;
 
     /**
-     * Fecha y hora de vencimiento del código.
+     * Fecha y hora de vencimiento del código de verificación.
      */
     private LocalDateTime verificationExpiresAt;
 
@@ -88,9 +89,42 @@ public class User {
     private int verificationAttempts;
 
     /**
-     * Fecha y hora del último envío del código.
+     * Fecha y hora del último envío del código de verificación.
      */
     private LocalDateTime lastVerificationSentAt;
+
+    /**
+     * Código de recuperación de contraseña almacenado mediante hash.
+     */
+    @Column(length = 255)
+    private String resetCodeHash;
+
+    /**
+     * Fecha y hora de vencimiento del código de recuperación.
+     */
+    private LocalDateTime resetExpiresAt;
+
+    /**
+     * Número de intentos de validación del código de recuperación.
+     */
+    @Column(nullable = false)
+    private int resetAttempts;
+
+    /**
+     * Fecha y hora del último envío del código de recuperación.
+     */
+    private LocalDateTime lastResetSentAt;
+
+    /**
+     * Fecha y hora del último cambio de contraseña.
+     */
+    private LocalDateTime passwordChangedAt;
+
+    /**
+     * Versión actual de autenticación del usuario.
+     */
+    @Column(nullable = false)
+    private int tokenVersion;
 
     /**
      * Fecha y hora de creación del usuario.
@@ -105,6 +139,8 @@ public class User {
         this.emailVerified = false;
         this.enabled = false;
         this.verificationAttempts = 0;
+        this.resetAttempts = 0;
+        this.tokenVersion = 0;
     }
 
     /**
@@ -123,6 +159,8 @@ public class User {
         this.emailVerified = false;
         this.enabled = false;
         this.verificationAttempts = 0;
+        this.resetAttempts = 0;
+        this.tokenVersion = 0;
     }
 
     /**
@@ -221,6 +259,54 @@ public class User {
 
     public void setLastVerificationSentAt(LocalDateTime lastVerificationSentAt) {
         this.lastVerificationSentAt = lastVerificationSentAt;
+    }
+
+    public String getResetCodeHash() {
+        return resetCodeHash;
+    }
+
+    public void setResetCodeHash(String resetCodeHash) {
+        this.resetCodeHash = resetCodeHash;
+    }
+
+    public LocalDateTime getResetExpiresAt() {
+        return resetExpiresAt;
+    }
+
+    public void setResetExpiresAt(LocalDateTime resetExpiresAt) {
+        this.resetExpiresAt = resetExpiresAt;
+    }
+
+    public int getResetAttempts() {
+        return resetAttempts;
+    }
+
+    public void setResetAttempts(int resetAttempts) {
+        this.resetAttempts = resetAttempts;
+    }
+
+    public LocalDateTime getLastResetSentAt() {
+        return lastResetSentAt;
+    }
+
+    public void setLastResetSentAt(LocalDateTime lastResetSentAt) {
+        this.lastResetSentAt = lastResetSentAt;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(LocalDateTime passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     public LocalDateTime getCreatedAt() {
