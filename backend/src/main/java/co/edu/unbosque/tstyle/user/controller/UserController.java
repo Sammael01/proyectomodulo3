@@ -16,71 +16,84 @@ import co.edu.unbosque.tstyle.security.dto.VerifyEmailRequest;
 import co.edu.unbosque.tstyle.user.service.UserService;
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
- * Controlador encargado de gestionar las operaciones
- * relacionadas con los usuarios de T Style.
+ * Controlador encargado de gestionar las operaciones relacionadas con los
+ * usuarios de T Style.
  *
  * @author Equipo T Style
  */
 @RestController
 @RequestMapping("/api/users")
 @Validated
+@Tag(name = "Usuarios", description = "Registro y verificación de cuentas de usuario")
 public class UserController {
 
-    private final UserService userService;
+	private final UserService userService;
 
-    /**
-     * Constructor del controlador de usuarios.
-     *
-     * @param userService servicio encargado de gestionar los usuarios
-     */
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+	/**
+	 * Constructor del controlador de usuarios.
+	 *
+	 * @param userService servicio encargado de gestionar los usuarios
+	 */
+	public UserController(UserService userService) {
+		this.userService = userService;
+	}
 
-    /**
-     * Registra un nuevo usuario.
-     *
-     * @param request datos del registro
-     * @return respuesta de confirmación
-     */
-    @PostMapping("/register")
-    public ResponseEntity<MessageResponse> registerUser(
-            @Valid @RequestBody RegisterRequest request) {
+	/**
+	 * Registra un nuevo usuario.
+	 *
+	 * @param request datos del registro
+	 * @return respuesta de confirmación
+	 */
+	@PostMapping("/register")
+	@Operation(summary = "Registrar usuario", description = "Crea una nueva cuenta de usuario en T Style.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "201", description = "Usuario registrado correctamente"),
+			@ApiResponse(responseCode = "400", description = "Datos de registro inválidos"),
+			@ApiResponse(responseCode = "409", description = "El correo ya está registrado") })
+	public ResponseEntity<MessageResponse> registerUser(@Valid @RequestBody RegisterRequest request) {
 
-        MessageResponse response = userService.registerUser(request);
+		MessageResponse response = userService.registerUser(request);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 
-    /**
-     * Verifica el correo electrónico de un usuario.
-     *
-     * @param request correo y código de verificación
-     * @return respuesta de confirmación
-     */
-    @PostMapping("/verify-email")
-    public ResponseEntity<MessageResponse> verifyEmail(
-            @Valid @RequestBody VerifyEmailRequest request) {
+	/**
+	 * Verifica el correo electrónico de un usuario.
+	 *
+	 * @param request correo y código de verificación
+	 * @return respuesta de confirmación
+	 */
+	@PostMapping("/verify-email")
+	@Operation(summary = "Verificar correo electrónico", description = "Valida el código enviado al correo electrónico del usuario.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Correo verificado correctamente"),
+			@ApiResponse(responseCode = "400", description = "Código o datos inválidos") })
+	public ResponseEntity<MessageResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
 
-        MessageResponse response = userService.verifyEmail(request);
+		MessageResponse response = userService.verifyEmail(request);
 
-        return ResponseEntity.ok(response);
-    }
+		return ResponseEntity.ok(response);
+	}
 
-    /**
-     * Solicita el envío de un nuevo código de verificación.
-     *
-     * @param request correo electrónico del usuario
-     * @return respuesta de confirmación
-     */
-    @PostMapping("/resend-verification")
-    public ResponseEntity<MessageResponse> resendVerificationCode(
-            @Valid @RequestBody ResendVerificationRequest request) {
+	/**
+	 * Solicita el envío de un nuevo código de verificación.
+	 *
+	 * @param request correo electrónico del usuario
+	 * @return respuesta de confirmación
+	 */
+	@PostMapping("/resend-verification")
+	@Operation(summary = "Reenviar código de verificación", description = "Solicita el envío de un nuevo código de verificación al correo del usuario.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Solicitud procesada"),
+			@ApiResponse(responseCode = "400", description = "Correo o solicitud inválida") })
+	public ResponseEntity<MessageResponse> resendVerificationCode(
+			@Valid @RequestBody ResendVerificationRequest request) {
 
-        MessageResponse response =
-            userService.resendVerificationCode(request);
+		MessageResponse response = userService.resendVerificationCode(request);
 
-        return ResponseEntity.ok(response);
-    }
+		return ResponseEntity.ok(response);
+	}
 }

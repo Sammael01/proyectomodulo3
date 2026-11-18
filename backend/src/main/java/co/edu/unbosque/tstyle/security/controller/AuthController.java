@@ -20,6 +20,12 @@ import co.edu.unbosque.tstyle.security.dto.ResetPasswordRequest;
 import co.edu.unbosque.tstyle.security.dto.UserProfileResponse;
 import co.edu.unbosque.tstyle.security.service.AuthService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Controlador encargado de los procesos de autenticación.
  *
@@ -31,6 +37,7 @@ import co.edu.unbosque.tstyle.security.service.AuthService;
  */
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticación", description = "Operaciones de autenticación y recuperación de contraseña")
 public class AuthController {
 
 	private final AuthService authService;
@@ -51,6 +58,10 @@ public class AuthController {
 	 * @return información del usuario y token JWT
 	 */
 	@PostMapping("/login")
+	@Operation(summary = "Iniciar sesión", description = "Autentica un usuario y devuelve su token JWT.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
+			@ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+			@ApiResponse(responseCode = "401", description = "Credenciales incorrectas") })
 	public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
 
 		AuthResponse response = authService.login(request);
@@ -65,6 +76,9 @@ public class AuthController {
 	 * @return perfil del usuario autenticado
 	 */
 	@GetMapping("/me")
+	@Operation(summary = "Consultar perfil autenticado", description = "Obtiene el perfil del usuario que inició sesión.", security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Perfil obtenido correctamente"),
+			@ApiResponse(responseCode = "401", description = "No autenticado") })
 	public ResponseEntity<UserProfileResponse> getAuthenticatedUser(Authentication authentication) {
 
 		UserProfileResponse response = authService.getAuthenticatedUser(authentication.getName());
@@ -79,6 +93,9 @@ public class AuthController {
 	 * @return mensaje de confirmación
 	 */
 	@PostMapping("/forgot-password")
+	@Operation(summary = "Solicitar recuperación de contraseña", description = "Solicita un código de recuperación para la cuenta.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Solicitud procesada"),
+			@ApiResponse(responseCode = "400", description = "Correo inválido") })
 	public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
 
 		MessageResponse response = authService.forgotPassword(request);
@@ -93,6 +110,9 @@ public class AuthController {
 	 * @return mensaje de confirmación
 	 */
 	@PostMapping("/reset-password")
+	@Operation(summary = "Restablecer contraseña", description = "Valida el código recibido y establece una nueva contraseña.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Contraseña actualizada"),
+			@ApiResponse(responseCode = "400", description = "Código o datos inválidos") })
 	public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
 
 		MessageResponse response = authService.resetPassword(request);
