@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import co.edu.unbosque.tstyle.audit.enums.AuditEventType;
 import co.edu.unbosque.tstyle.audit.service.AuditService;
 import co.edu.unbosque.tstyle.email.EmailCenter;
 import co.edu.unbosque.tstyle.exception.BusinessException;
@@ -87,6 +89,9 @@ class UserServiceTest {
 
 		verify(userRepository).save(any(User.class));
 		verify(emailCenter).sendVerificationCode(eq("daniel@tstyle.com"), any(String.class));
+
+		verify(auditService).registerEvent(eq(AuditEventType.USER_REGISTERED), isNull(), eq("daniel@tstyle.com"),
+				eq("127.0.0.1"), isNull(), isNull());
 	}
 
 	/**
@@ -167,7 +172,7 @@ class UserServiceTest {
 	}
 
 	/**
-	 * Comprueba que un código correcto active la cuenta.
+	 * Comprueba que un código correcto active la cuenta y genere auditoría.
 	 */
 	@Test
 	void testVerifyEmailSuccessfully() {
@@ -188,10 +193,13 @@ class UserServiceTest {
 		assertEquals(0, user.getVerificationAttempts());
 
 		verify(userRepository).save(user);
+
+		verify(auditService).registerEvent(eq(AuditEventType.EMAIL_VERIFICATION_SUCCESS), isNull(),
+				eq("daniel@tstyle.com"), eq("127.0.0.1"), isNull(), isNull());
 	}
 
 	/**
-	 * Comprueba que un código incorrecto aumente los intentos.
+	 * Comprueba que un código incorrecto aumente los intentos y genere auditoría.
 	 */
 	@Test
 	void testVerifyEmailWithIncorrectCode() {
@@ -207,6 +215,9 @@ class UserServiceTest {
 
 		assertEquals(1, user.getVerificationAttempts());
 		assertFalse(user.isEmailVerified());
+
+		verify(auditService).registerEvent(eq(AuditEventType.EMAIL_VERIFICATION_FAILURE), isNull(),
+				eq("daniel@tstyle.com"), eq("127.0.0.1"), isNull(), isNull());
 	}
 
 	/**
@@ -264,12 +275,11 @@ class UserServiceTest {
 				() -> userService.verifyEmail(new VerifyEmailRequest("daniel@tstyle.com", "123456"), "127.0.0.1"));
 
 		verify(passwordEncoder, never()).matches(any(String.class), any(String.class));
-
 		verify(userRepository, never()).save(user);
 	}
 
 	/**
-	 * Comprueba que se pueda solicitar un nuevo código.
+	 * Comprueba que se pueda solicitar un nuevo código y genere auditoría.
 	 */
 	@Test
 	void testResendVerificationCodeSuccessfully() {
@@ -289,6 +299,9 @@ class UserServiceTest {
 
 		verify(userRepository).save(user);
 		verify(emailCenter).sendVerificationCode(eq("daniel@tstyle.com"), any(String.class));
+
+		verify(auditService).registerEvent(eq(AuditEventType.VERIFICATION_CODE_RESENT), isNull(),
+				eq("daniel@tstyle.com"), eq("127.0.0.1"), isNull(), isNull());
 	}
 
 	/**
@@ -306,7 +319,6 @@ class UserServiceTest {
 				.resendVerificationCode(new ResendVerificationRequest("daniel@tstyle.com"), "127.0.0.1"));
 
 		verify(userRepository, never()).save(user);
-
 		verify(emailCenter, never()).sendVerificationCode(any(String.class), any(String.class));
 	}
 

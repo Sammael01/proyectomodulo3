@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import co.edu.unbosque.tstyle.audit.enums.AuditEventType;
 import co.edu.unbosque.tstyle.audit.service.AuditService;
 import co.edu.unbosque.tstyle.email.EmailCenter;
 import co.edu.unbosque.tstyle.exception.BusinessException;
@@ -71,25 +73,17 @@ class AuthServiceTest {
 
 	@BeforeEach
 	void setUp() {
-
 		user = new User("Daniel Zapata", "daniel@tstyle.com", "hashed-password", Role.CLIENT);
-
 		user.setId(1L);
 		user.setEmailVerified(true);
 		user.setEnabled(true);
 		user.setTokenVersion(0);
 	}
 
-	/**
-	 * Comprueba el inicio de sesión exitoso.
-	 */
 	@Test
 	void testLoginSuccessfully() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("Password123!", "hashed-password")).thenReturn(true);
-
 		when(jwtService.generateToken(user)).thenReturn("jwt-token");
 
 		AuthResponse response = authService.login(new LoginRequest("daniel@tstyle.com", "Password123!"), ipAddress);
@@ -101,14 +95,12 @@ class AuthServiceTest {
 		assertEquals("CLIENT", response.getRole());
 
 		verify(jwtService).generateToken(user);
+		verify(auditService).registerEvent(eq(AuditEventType.LOGIN_SUCCESS), eq(1L), eq("daniel@tstyle.com"),
+				eq(ipAddress), isNull(), isNull());
 	}
 
-	/**
-	 * Comprueba que se rechace un correo inexistente.
-	 */
 	@Test
 	void testLoginWithNonexistentEmail() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.empty());
 
 		assertThrows(BusinessException.class,
@@ -117,32 +109,24 @@ class AuthServiceTest {
 		verify(jwtService, never()).generateToken(any(User.class));
 	}
 
-	/**
-	 * Comprueba que se rechace una contraseña incorrecta.
-	 */
 	@Test
 	void testLoginWithIncorrectPassword() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("WrongPassword123!", "hashed-password")).thenReturn(false);
 
 		assertThrows(BusinessException.class,
 				() -> authService.login(new LoginRequest("daniel@tstyle.com", "WrongPassword123!"), ipAddress));
 
 		verify(jwtService, never()).generateToken(any(User.class));
+		verify(auditService).registerEvent(eq(AuditEventType.LOGIN_FAILURE), eq(1L), eq("daniel@tstyle.com"),
+				eq(ipAddress), isNull(), isNull());
 	}
 
-	/**
-	 * Comprueba que una cuenta sin correo verificado no pueda iniciar sesión.
-	 */
 	@Test
 	void testLoginWithUnverifiedEmail() {
-
 		user.setEmailVerified(false);
 
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("Password123!", "hashed-password")).thenReturn(true);
 
 		assertThrows(BusinessException.class,
@@ -151,16 +135,11 @@ class AuthServiceTest {
 		verify(jwtService, never()).generateToken(any(User.class));
 	}
 
-	/**
-	 * Comprueba que una cuenta deshabilitada no pueda iniciar sesión.
-	 */
 	@Test
 	void testLoginWithDisabledAccount() {
-
 		user.setEnabled(false);
 
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("Password123!", "hashed-password")).thenReturn(true);
 
 		assertThrows(BusinessException.class,
@@ -169,16 +148,10 @@ class AuthServiceTest {
 		verify(jwtService, never()).generateToken(any(User.class));
 	}
 
-	/**
-	 * Comprueba la normalización del correo durante el inicio de sesión.
-	 */
 	@Test
 	void testLoginNormalizesEmail() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("Password123!", "hashed-password")).thenReturn(true);
-
 		when(jwtService.generateToken(user)).thenReturn("jwt-token");
 
 		authService.login(new LoginRequest(" DANIEL@TSTYLE.COM ", "Password123!"), ipAddress);
@@ -186,12 +159,8 @@ class AuthServiceTest {
 		verify(userRepository).findByEmail("daniel@tstyle.com");
 	}
 
-	/**
-	 * Comprueba la consulta del perfil autenticado.
-	 */
 	@Test
 	void testGetAuthenticatedUserSuccessfully() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
 
 		UserProfileResponse response = authService.getAuthenticatedUser("daniel@tstyle.com");
@@ -202,25 +171,16 @@ class AuthServiceTest {
 		assertEquals("CLIENT", response.getRole());
 	}
 
-	/**
-	 * Comprueba que se genere un error cuando el usuario no existe.
-	 */
 	@Test
 	void testGetAuthenticatedUserNotFound() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.empty());
 
 		assertThrows(ResourceNotFoundException.class, () -> authService.getAuthenticatedUser("daniel@tstyle.com"));
 	}
 
-	/**
-	 * Comprueba la solicitud de recuperación de contraseña.
-	 */
 	@Test
 	void testForgotPasswordSuccessfully() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.encode(any(String.class))).thenReturn("hashed-reset-code");
 
 		MessageResponse response = authService.forgotPassword(new ForgotPasswordRequest("daniel@tstyle.com"),
@@ -237,14 +197,12 @@ class AuthServiceTest {
 
 		verify(userRepository).save(user);
 		verify(emailCenter).sendPasswordResetCode(eq("daniel@tstyle.com"), any(String.class));
+		verify(auditService).registerEvent(eq(AuditEventType.PASSWORD_RESET_REQUEST), eq(1L), eq("daniel@tstyle.com"),
+				eq(ipAddress), isNull(), isNull());
 	}
 
-	/**
-	 * Comprueba que la respuesta sea genérica cuando el correo no existe.
-	 */
 	@Test
 	void testForgotPasswordWithNonexistentEmail() {
-
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.empty());
 
 		MessageResponse response = authService.forgotPassword(new ForgotPasswordRequest("daniel@tstyle.com"),
@@ -256,12 +214,8 @@ class AuthServiceTest {
 		verify(emailCenter, never()).sendPasswordResetCode(any(String.class), any(String.class));
 	}
 
-	/**
-	 * Comprueba que no se envíe otro código durante el tiempo de espera.
-	 */
 	@Test
 	void testForgotPasswordRespectsCooldown() {
-
 		user.setLastResetSentAt(LocalDateTime.now().minusSeconds(30));
 
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
@@ -272,18 +226,13 @@ class AuthServiceTest {
 		verify(emailCenter, never()).sendPasswordResetCode(any(String.class), any(String.class));
 	}
 
-	/**
-	 * Comprueba que un código incorrecto aumente los intentos.
-	 */
 	@Test
 	void testResetPasswordWithIncorrectCode() {
-
 		user.setResetCodeHash("hashed-reset-code");
 		user.setResetExpiresAt(LocalDateTime.now().plusMinutes(10));
 		user.setResetAttempts(0);
 
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("999999", "hashed-reset-code")).thenReturn(false);
 
 		assertThrows(BusinessException.class, () -> authService
@@ -293,12 +242,8 @@ class AuthServiceTest {
 		verify(userRepository, never()).save(user);
 	}
 
-	/**
-	 * Comprueba que un código vencido sea eliminado.
-	 */
 	@Test
 	void testResetPasswordWithExpiredCode() {
-
 		user.setResetCodeHash("hashed-reset-code");
 		user.setResetExpiresAt(LocalDateTime.now().minusMinutes(1));
 
@@ -312,12 +257,8 @@ class AuthServiceTest {
 		assertEquals(0, user.getResetAttempts());
 	}
 
-	/**
-	 * Comprueba que se bloquee el proceso después de cinco intentos.
-	 */
 	@Test
 	void testResetPasswordWithMaximumAttempts() {
-
 		user.setResetCodeHash("hashed-reset-code");
 		user.setResetExpiresAt(LocalDateTime.now().plusMinutes(10));
 		user.setResetAttempts(5);
@@ -332,22 +273,15 @@ class AuthServiceTest {
 		verify(passwordEncoder, never()).matches(any(String.class), any(String.class));
 	}
 
-	/**
-	 * Comprueba que la contraseña se actualice y se invaliden los tokens
-	 * anteriores.
-	 */
 	@Test
 	void testResetPasswordSuccessfully() {
-
 		user.setResetCodeHash("hashed-reset-code");
 		user.setResetExpiresAt(LocalDateTime.now().plusMinutes(10));
 		user.setResetAttempts(0);
 		user.setTokenVersion(2);
 
 		when(userRepository.findByEmail("daniel@tstyle.com")).thenReturn(Optional.of(user));
-
 		when(passwordEncoder.matches("123456", "hashed-reset-code")).thenReturn(true);
-
 		when(passwordEncoder.encode("NewPassword123!")).thenReturn("new-hashed-password");
 
 		MessageResponse response = authService
@@ -364,5 +298,7 @@ class AuthServiceTest {
 		assertEquals(0, user.getResetAttempts());
 
 		verify(userRepository).save(user);
+		verify(auditService).registerEvent(eq(AuditEventType.PASSWORD_RESET_SUCCESS), eq(1L), eq("daniel@tstyle.com"),
+				eq(ipAddress), isNull(), isNull());
 	}
 }
