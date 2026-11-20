@@ -108,3 +108,35 @@
   font-size: 0.85rem;
   padding: 0 1.1rem;
 }
+
+.ts-section {
+  position: relative;
+  z-index: 2;
+  padding: 3rem 0 4rem;
+  background: var(--ts-black);
+  border-top: 1px solid var(--ts-line);
+}
+
+.ts-h2 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin: 0;
+}
+
+.ts-catlink:hover {
+  border-color: var(--ts-yellow);
+}
+
+.ts-banner {
+  background: linear-gradient(110deg, var(--ts-dark) 55%, #3a3a12 100%);
+}
+
+.ts-banner-art {
+  flex: 0 0 180px;
+  height: 140px;
+  align-items: center;
+  justify-content: center;
+  background: var(--ts-orange);
+  color: var(--ts-black);
+  font-size: 4rem;
+  clip-path: polygon(10% 0, 100% 8%, 90% 100%, 0 92%);
+}

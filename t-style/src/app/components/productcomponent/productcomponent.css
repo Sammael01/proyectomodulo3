@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.breadcrumb {
+  --bs-breadcrumb-divider-color: var(--ts-gray);
+  --bs-breadcrumb-item-active-color: var(--ts-light);
+  letter-spacing: 0.08em;
+}
+
+.ts-gallery {
+  aspect-ratio: 1;
+  font-size: 5rem;
+}
+
+.ts-title {
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  line-height: 1.05;
+  margin-bottom: 1rem;
+}
+
+.ts-dot {
+  width: 14px;
+  height: 14px;
+}
+
+.ts-size {
+  min-width: 52px;
+}
+
+.btn-check:checked + .ts-size {
+  background: var(--ts-light);
+  color: var(--ts-black);
+  border-color: var(--ts-light);
+}
+
+.ts-qty {
+  min-width: 3rem;
+  opacity: 1 !important;
+  color: var(--ts-light) !important;
+}

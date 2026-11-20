@@ -1,0 +1,62 @@
+<section class="ts-page">
+  <div class="container-fluid px-4 px-lg-5">
+    <div class="animate__animated animate__fadeInDown">
+      <span class="ts-eyebrow">Tienda</span>
+      <h1 class="ts-heading">Colección
+        @for (n of [results().length]; track n) {
+          <span class="ts-mark animate__animated animate__flipInX">{{ n }}</span>
+        }
+      </h1>
+    </div>
+
+    <div class="row g-3 align-items-center mb-3">
+      <div class="col-12 col-lg-5">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+          <input type="search" class="form-control" placeholder="Buscar por nombre, categoría o color" [value]="query()"
+            (input)="setQuery($any($event.target).value)" aria-label="Buscar productos" />
+        </div>
+      </div>
+      <div class="col-12 col-lg-7 d-flex flex-wrap align-items-center justify-content-lg-end gap-3">
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="f-new" [checked]="onlyNew()" (change)="toggleNew($any($event.target).checked)" />
+          <label class="form-check-label" for="f-new">Novedades</label>
+        </div>
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="f-sale" [checked]="onlySale()" (change)="onlySale.set($any($event.target).checked)" />
+          <label class="form-check-label" for="f-sale">En oferta</label>
+        </div>
+        <select class="form-select form-select-sm w-auto" [value]="sort()" (change)="setSort($any($event.target).value)" aria-label="Ordenar">
+          @for (o of sortOptions; track o.key) {
+            <option [value]="o.key" [selected]="o.key === sort()">{{ o.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4" role="group" aria-label="Categorías">
+      @for (c of categories(); track c) {
+        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" [class.active]="category() === c" (click)="setCategory(c)">{{ c }}</button>
+      }
+    </div>
+
+    @if (results().length) {
+      <div class="row g-3 g-lg-4">
+        @for (p of results(); track p.id; let i = $index) {
+          <div class="col-6 col-md-4 col-xl-3 animate__animated animate__fadeInUp ts-stagger" [style.--i]="i % 8">
+            <app-productcardcomponent [product]="p" />
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="card text-center py-5 border-dashed animate__animated animate__fadeIn">
+        <div class="card-body">
+          <i class="bi bi-search display-5 text-warning d-block mb-3 animate__animated animate__swing"></i>
+          <h2 class="font-display">Sin resultados</h2>
+          <p class="text-body-secondary">No encontramos productos con esos filtros.</p>
+          <button type="button" class="btn ts-btn" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
+      </div>
+    }
+  </div>
+</section>

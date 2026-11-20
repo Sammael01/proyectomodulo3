@@ -1,0 +1,174 @@
+:host {
+  display: block;
+}
+
+.ts-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+.ts-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  border: 0;
+}
+
+.ts-poster {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--ts-light);
+  overflow: hidden;
+}
+
+.ts-thumbimg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+}
+
+.ts-bigplay {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  background: var(--ts-yellow);
+  color: var(--ts-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  clip-path: polygon(8% 0, 100% 8%, 92% 100%, 0 92%);
+}
+
+.ts-poster-title {
+  position: relative;
+  font-size: clamp(1.3rem, 3vw, 2.2rem);
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.ts-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.75rem 1rem 0.5rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+}
+
+.ts-frame.is-playing:not(:hover) .ts-controls {
+  opacity: 0;
+}
+
+.ts-controls button {
+  background: none;
+  border: 0;
+  color: var(--ts-light);
+  font-size: 1.2rem;
+  padding: 0.2rem 0.45rem;
+}
+
+.ts-controls button:hover {
+  color: var(--ts-yellow);
+}
+
+.ts-progress {
+  height: 5px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  --bs-progress-bg: rgba(222, 220, 213, 0.25);
+}
+
+.ts-vol {
+  width: 90px;
+}
+
+.ts-time {
+  color: var(--ts-light);
+  margin-left: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-meta {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--ts-line);
+}
+
+.ts-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.ts-desc {
+  color: var(--ts-muted);
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+  white-space: pre-line;
+  max-height: 9rem;
+  overflow: auto;
+}
+
+.ts-avatar {
+  flex: 0 0 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ts-line);
+  color: var(--ts-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ts-add {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.ts-row {
+  border-left: 3px solid transparent !important;
+}
+
+.ts-row.active {
+  border-left-color: var(--ts-orange) !important;
+}
+
+.ts-mini {
+  position: relative;
+  flex: 0 0 112px;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  overflow: hidden;
+}
+
+.ts-mini img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ts-mini i {
+  position: relative;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}

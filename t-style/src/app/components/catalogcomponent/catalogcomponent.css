@@ -1,0 +1,7 @@
+:host {
+  display: block;
+}
+
+.border-dashed {
+  border-style: dashed;
+}
