@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import co.edu.unbosque.tstyle.security.dto.AuthResponse;
@@ -19,6 +20,12 @@ import co.edu.unbosque.tstyle.security.dto.MessageResponse;
 import co.edu.unbosque.tstyle.security.dto.ResetPasswordRequest;
 import co.edu.unbosque.tstyle.security.dto.UserProfileResponse;
 import co.edu.unbosque.tstyle.security.service.AuthService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Controlador encargado de los procesos de autenticación.
@@ -31,6 +38,7 @@ import co.edu.unbosque.tstyle.security.service.AuthService;
  */
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticación", description = "Operaciones de autenticación y recuperación de contraseña")
 public class AuthController {
 
 	private final AuthService authService;
@@ -47,13 +55,19 @@ public class AuthController {
 	/**
 	 * Permite iniciar sesión en la plataforma.
 	 *
-	 * @param request correo y contraseña del usuario
+	 * @param request     correo y contraseña del usuario
+	 * @param httpRequest solicitud HTTP
 	 * @return información del usuario y token JWT
 	 */
 	@PostMapping("/login")
-	public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+	@Operation(summary = "Iniciar sesión", description = "Autentica un usuario y devuelve su token JWT.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
+			@ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+			@ApiResponse(responseCode = "401", description = "Credenciales incorrectas") })
+	public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+			HttpServletRequest httpRequest) {
 
-		AuthResponse response = authService.login(request);
+		AuthResponse response = authService.login(request, httpRequest.getRemoteAddr());
 
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
@@ -65,6 +79,9 @@ public class AuthController {
 	 * @return perfil del usuario autenticado
 	 */
 	@GetMapping("/me")
+	@Operation(summary = "Consultar perfil autenticado", description = "Obtiene el perfil del usuario que inició sesión.", security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Perfil obtenido correctamente"),
+			@ApiResponse(responseCode = "401", description = "No autenticado") })
 	public ResponseEntity<UserProfileResponse> getAuthenticatedUser(Authentication authentication) {
 
 		UserProfileResponse response = authService.getAuthenticatedUser(authentication.getName());
@@ -75,13 +92,18 @@ public class AuthController {
 	/**
 	 * Solicita el envío de un código para recuperar la contraseña.
 	 *
-	 * @param request correo electrónico asociado a la cuenta
+	 * @param request     correo electrónico asociado a la cuenta
+	 * @param httpRequest solicitud HTTP
 	 * @return mensaje de confirmación
 	 */
 	@PostMapping("/forgot-password")
-	public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+	@Operation(summary = "Solicitar recuperación de contraseña", description = "Solicita un código de recuperación para la cuenta.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Solicitud procesada"),
+			@ApiResponse(responseCode = "400", description = "Correo inválido") })
+	public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+			HttpServletRequest httpRequest) {
 
-		MessageResponse response = authService.forgotPassword(request);
+		MessageResponse response = authService.forgotPassword(request, httpRequest.getRemoteAddr());
 
 		return ResponseEntity.ok(response);
 	}
@@ -89,13 +111,18 @@ public class AuthController {
 	/**
 	 * Valida el código de recuperación y establece una nueva contraseña.
 	 *
-	 * @param request correo, código y nueva contraseña
+	 * @param request     correo, código y nueva contraseña
+	 * @param httpRequest solicitud HTTP
 	 * @return mensaje de confirmación
 	 */
 	@PostMapping("/reset-password")
-	public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+	@Operation(summary = "Restablecer contraseña", description = "Valida el código recibido y establece una nueva contraseña.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Contraseña actualizada"),
+			@ApiResponse(responseCode = "400", description = "Código o datos inválidos") })
+	public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
+			HttpServletRequest httpRequest) {
 
-		MessageResponse response = authService.resetPassword(request);
+		MessageResponse response = authService.resetPassword(request, httpRequest.getRemoteAddr());
 
 		return ResponseEntity.ok(response);
 	}

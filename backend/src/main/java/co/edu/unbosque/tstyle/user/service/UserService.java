@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.unbosque.tstyle.audit.enums.AuditEventType;
+import co.edu.unbosque.tstyle.audit.service.AuditService;
 import co.edu.unbosque.tstyle.email.EmailCenter;
 import co.edu.unbosque.tstyle.exception.BusinessException;
 import co.edu.unbosque.tstyle.exception.DuplicateResourceException;
@@ -29,190 +31,183 @@ import co.edu.unbosque.tstyle.user.repository.UserRepository;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailCenter emailCenter;
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final EmailCenter emailCenter;
+	private final AuditService auditService;
 
-    private static final SecureRandom RANDOM = new SecureRandom();
+	private static final SecureRandom RANDOM = new SecureRandom();
 
-    /**
-     * Constructor del servicio de usuarios.
-     *
-     * @param userRepository repositorio de usuarios
-     * @param passwordEncoder codificador de contraseñas
-     * @param emailCenter servicio encargado de enviar correos
-     */
-    public UserService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            EmailCenter emailCenter) {
+	/**
+	 * Constructor del servicio de usuarios.
+	 *
+	 * @param userRepository  repositorio de usuarios
+	 * @param passwordEncoder codificador de contraseñas
+	 * @param emailCenter     servicio encargado de enviar correos
+	 * @param auditService    servicio encargado de registrar eventos
+	 */
+	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailCenter emailCenter,
+			AuditService auditService) {
 
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailCenter = emailCenter;
-    }
+		this.userRepository = userRepository;
+		this.passwordEncoder = passwordEncoder;
+		this.emailCenter = emailCenter;
+		this.auditService = auditService;
+	}
 
-    /**
-     * Registra un nuevo cliente y envía un código de verificación.
-     *
-     * @param request datos necesarios para el registro
-     * @return mensaje de confirmación
-     */
-    @Transactional
-    public MessageResponse registerUser(RegisterRequest request) {
+	/**
+	 * Registra un nuevo cliente y envía un código de verificación.
+	 *
+	 * @param request   datos necesarios para el registro
+	 * @param ipAddress dirección IP de origen
+	 * @return mensaje de confirmación
+	 */
+	@Transactional
+	public MessageResponse registerUser(RegisterRequest request, String ipAddress) {
 
-        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+		String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
 
-        if (userRepository.existsByEmail(email)) {
-            throw new DuplicateResourceException(
-                "El correo electrónico ya se encuentra registrado"
-            );
-        }
+		if (userRepository.existsByEmail(email)) {
+			throw new DuplicateResourceException("El correo electrónico ya se encuentra registrado");
+		}
 
-        String encryptedPassword = passwordEncoder.encode(request.getPassword());
+		String encryptedPassword = passwordEncoder.encode(request.getPassword());
 
-        User user = new User(
-            request.getName().trim(),
-            email,
-            encryptedPassword,
-            Role.CLIENT
-        );
+		User user = new User(request.getName().trim(), email, encryptedPassword, Role.CLIENT);
 
-        String verificationCode = generateVerificationCode();
+		String verificationCode = generateVerificationCode();
 
-        user.setVerificationCodeHash(
-            passwordEncoder.encode(verificationCode)
-        );
+		user.setVerificationCodeHash(passwordEncoder.encode(verificationCode));
 
-        user.setVerificationExpiresAt(
-            LocalDateTime.now().plusMinutes(10)
-        );
+		user.setVerificationExpiresAt(LocalDateTime.now().plusMinutes(10));
 
-        user.setVerificationAttempts(0);
-        user.setLastVerificationSentAt(LocalDateTime.now());
+		user.setVerificationAttempts(0);
+		user.setLastVerificationSentAt(LocalDateTime.now());
 
-        userRepository.save(user);
+		userRepository.save(user);
 
-        emailCenter.sendVerificationCode(email, verificationCode);
+		emailCenter.sendVerificationCode(email, verificationCode);
 
-        return new MessageResponse(
-            "Usuario registrado. Revisa tu correo para verificar la cuenta"
-        );
-    }
+		auditService.registerEvent(AuditEventType.USER_REGISTERED, user.getId(), email, ipAddress, null, null);
 
-    /**
-     * Verifica el código enviado al correo y activa la cuenta.
-     *
-     * @param request correo y código de verificación
-     * @return mensaje de confirmación
-     */
-    @Transactional(noRollbackFor = BusinessException.class)
-    public MessageResponse verifyEmail(VerifyEmailRequest request) {
+		return new MessageResponse("Usuario registrado. Revisa tu correo para verificar la cuenta");
+	}
 
-        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+	/**
+	 * Verifica el código enviado al correo y activa la cuenta.
+	 *
+	 * @param request   correo y código de verificación
+	 * @param ipAddress dirección IP de origen
+	 * @return mensaje de confirmación
+	 */
+	@Transactional(noRollbackFor = BusinessException.class)
+	public MessageResponse verifyEmail(VerifyEmailRequest request, String ipAddress) {
 
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "No se encontró un usuario con ese correo"
-            ));
+		String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
 
-        if (user.isEmailVerified()) {
-            throw new BusinessException("El correo ya se encuentra verificado");
-        }
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("No se encontró un usuario con ese correo"));
 
-        if (user.getVerificationCodeHash() == null
-                || user.getVerificationExpiresAt() == null) {
-            throw new BusinessException("Solicita un nuevo código de verificación");
-        }
+		try {
 
-        if (user.getVerificationExpiresAt().isBefore(LocalDateTime.now())) {
-            user.setVerificationCodeHash(null);
-            user.setVerificationExpiresAt(null);
-            throw new BusinessException("El código ha vencido. Solicita uno nuevo");
-        }
+			if (user.isEmailVerified()) {
+				throw new BusinessException("El correo ya se encuentra verificado");
+			}
 
-        if (user.getVerificationAttempts() >= 5) {
-            throw new BusinessException(
-                "Superaste el máximo de intentos. Solicita un nuevo código"
-            );
-        }
+			if (user.getVerificationCodeHash() == null || user.getVerificationExpiresAt() == null) {
+				throw new BusinessException("Solicita un nuevo código de verificación");
+			}
 
-        user.setVerificationAttempts(user.getVerificationAttempts() + 1);
+			if (user.getVerificationExpiresAt().isBefore(LocalDateTime.now())) {
+				user.setVerificationCodeHash(null);
+				user.setVerificationExpiresAt(null);
+				throw new BusinessException("El código ha vencido. Solicita uno nuevo");
+			}
 
-        if (!passwordEncoder.matches(
-                request.getCode(),
-                user.getVerificationCodeHash())) {
+			if (user.getVerificationAttempts() >= 5) {
+				throw new BusinessException("Superaste el máximo de intentos. Solicita un nuevo código");
+			}
 
-            throw new BusinessException("El código de verificación es incorrecto");
-        }
+			user.setVerificationAttempts(user.getVerificationAttempts() + 1);
 
-        user.setEmailVerified(true);
-        user.setEnabled(true);
-        user.setVerificationCodeHash(null);
-        user.setVerificationExpiresAt(null);
-        user.setVerificationAttempts(0);
+			if (!passwordEncoder.matches(request.getCode(), user.getVerificationCodeHash())) {
 
-        userRepository.save(user);
+				throw new BusinessException("El código de verificación es incorrecto");
+			}
 
-        return new MessageResponse("Correo verificado correctamente");
-    }
+			user.setEmailVerified(true);
+			user.setEnabled(true);
+			user.setVerificationCodeHash(null);
+			user.setVerificationExpiresAt(null);
+			user.setVerificationAttempts(0);
 
-    /**
-     * Genera y envía un nuevo código de verificación.
-     *
-     * @param request correo del usuario
-     * @return mensaje de confirmación
-     */
-    @Transactional
-    public MessageResponse resendVerificationCode(
-            ResendVerificationRequest request) {
+			userRepository.save(user);
 
-        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+			auditService.registerEvent(AuditEventType.EMAIL_VERIFICATION_SUCCESS, user.getId(), email, ipAddress, null,
+					null);
 
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "No se encontró un usuario con ese correo"
-            ));
+			return new MessageResponse("Correo verificado correctamente");
 
-        if (user.isEmailVerified()) {
-            throw new BusinessException("El correo ya se encuentra verificado");
-        }
+		} catch (BusinessException exception) {
 
-        LocalDateTime now = LocalDateTime.now();
+			auditService.registerEvent(AuditEventType.EMAIL_VERIFICATION_FAILURE, user.getId(), email, ipAddress, null,
+					null);
 
-        if (user.getLastVerificationSentAt() != null
-                && user.getLastVerificationSentAt().plusSeconds(60).isAfter(now)) {
-            throw new BusinessException(
-                "Debes esperar 60 segundos antes de solicitar otro código"
-            );
-        }
+			throw exception;
+		}
+	}
 
-        String verificationCode = generateVerificationCode();
+	/**
+	 * Genera y envía un nuevo código de verificación.
+	 *
+	 * @param request   correo del usuario
+	 * @param ipAddress dirección IP de origen
+	 * @return mensaje de confirmación
+	 */
+	@Transactional
+	public MessageResponse resendVerificationCode(ResendVerificationRequest request, String ipAddress) {
 
-        user.setVerificationCodeHash(
-            passwordEncoder.encode(verificationCode)
-        );
+		String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
 
-        user.setVerificationExpiresAt(now.plusMinutes(10));
-        user.setVerificationAttempts(0);
-        user.setLastVerificationSentAt(now);
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("No se encontró un usuario con ese correo"));
 
-        userRepository.save(user);
+		if (user.isEmailVerified()) {
+			throw new BusinessException("El correo ya se encuentra verificado");
+		}
 
-        emailCenter.sendVerificationCode(email, verificationCode);
+		LocalDateTime now = LocalDateTime.now();
 
-        return new MessageResponse("Se envió un nuevo código de verificación");
-    }
+		if (user.getLastVerificationSentAt() != null && user.getLastVerificationSentAt().plusSeconds(60).isAfter(now)) {
+			throw new BusinessException("Debes esperar 60 segundos antes de solicitar otro código");
+		}
 
-    /**
-     * Genera un código numérico de seis dígitos.
-     *
-     * @return código de verificación
-     */
-    private String generateVerificationCode() {
+		String verificationCode = generateVerificationCode();
 
-        int code = RANDOM.nextInt(1000000);
+		user.setVerificationCodeHash(passwordEncoder.encode(verificationCode));
 
-        return String.format("%06d", code);
-    }
+		user.setVerificationExpiresAt(now.plusMinutes(10));
+		user.setVerificationAttempts(0);
+		user.setLastVerificationSentAt(now);
+
+		userRepository.save(user);
+
+		emailCenter.sendVerificationCode(email, verificationCode);
+
+		auditService.registerEvent(AuditEventType.VERIFICATION_CODE_RESENT, user.getId(), email, ipAddress, null, null);
+
+		return new MessageResponse("Se envió un nuevo código de verificación");
+	}
+
+	/**
+	 * Genera un código numérico de seis dígitos.
+	 *
+	 * @return código de verificación
+	 */
+	private String generateVerificationCode() {
+
+		int code = RANDOM.nextInt(1000000);
+
+		return String.format("%06d", code);
+	}
 }
