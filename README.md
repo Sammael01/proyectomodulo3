@@ -1,102 +1,286 @@
-# T Style · Backend
+# T Style
 
-Java 21 + Spring Boot + Maven, empaquetado como WAR para Tomcat.
-Este README documenta el **módulo B (catálogo e integraciones externas)**.
+**An integrated fashion marketplace and entertainment platform.**
 
-## Variables de entorno
+## Description
 
-| Variable | Obligatoria | Uso |
-| --- | --- | --- |
-| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Sí | Conexión a MySQL |
-| `TMDB_ACCESS_TOKEN` | Solo para `/api/movies` | Token de lectura (Bearer) de TMDB |
-| `CATALOG_IMPORT_ENABLED` | No (por defecto `false`) | Activa la importación del catálogo al arrancar |
-| `CATALOG_IMPORT_PATH` | Si se activa la importación | `file:/ruta/catalogo.json` o `classpath:...` |
+T Style is a web-based platform designed to bring fashion shopping and entertainment together in one place.
 
-`application.properties` no contiene secretos y mantiene `spring.jpa.hibernate.ddl-auto=none`:
-el esquema lo genera el mecanismo del profesor a partir de su matriz JSON.
+The project aims to provide users with access to clothing products from external marketplaces such as Amazon, Temu, Shein, and Mercado Libre, while integrating real-time information and movie discovery features.
 
-## Endpoints del catálogo
+The platform is being developed with Angular on the frontend and Java Spring Boot on the backend.
 
-Todos son `GET`, públicos y paginados.
+## Team Members
 
-| Ruta | Descripción |
-| --- | --- |
-| `/api/products` | Parámetros: `categoryId`, `providerId`, `search` (máx. 100), `page` (desde 0), `size` (1–50, por defecto 12), `sortBy` (`name`, `price`, `id`), `direction` (`asc`/`desc`) |
-| `/api/products/{id}` | Ficha de un producto; 404 si no existe o su proveedor está inactivo |
-| `/api/movies?query=&page=` | Búsqueda en TMDB (2–100 caracteres, páginas 0–19, caché de 10 min) |
-| `/api/movies/{id}` | Detalle con `trailerUrl` de YouTube si TMDB lo informa (caché de 1 h) |
+- Daniel Zapata
+- Samuel Contreras
+- Samuel Parada
+- Sebastian Hernandez
 
-### Contrato `ProductResponse` (consumido por wishlist y carrito)
+## Project Objectives
 
-```json
-{
-  "id": 5,
-  "provider": "NombreProveedor",
-  "externalId": "ID-EN-EL-PROVEEDOR",
-  "name": "Nombre",
-  "imageUrl": "https://...",
-  "price": 59900.00,
-  "currency": "COP",
-  "externalUrl": "https://...",
-  "providerAvailable": true
-}
+- Provide a centralized interface for discovering clothing products from external marketplaces.
+- Display product information, prices, and relevant details.
+- Support product search and personalized shopping experiences.
+- Integrate currency information and external APIs.
+- Provide a movie discovery experience with information and YouTube trailers.
+- Implement user registration, authentication, and role-based access.
+- Provide administrative functionality for managing platform information.
+
+## Technologies Used
+
+### Backend
+
+- Java 21
+- Spring Boot 4.1.2
+- Spring Data JPA
+- Spring Web MVC
+- Spring Validation
+- Spring Security Crypto
+- BCrypt password hashing
+- Maven
+- MySQL
+- JUnit 5
+- Mockito
+- Apache Tomcat (WAR deployment)
+
+### Frontend
+
+- Angular
+- TypeScript
+
+### Development Tools
+
+- Eclipse IDE
+- Git and GitHub
+- Maven Wrapper
+- Postman / Insomnia for API testing
+
+## Project Structure
+
+The repository is organized into separate frontend and backend development areas.
+
+```text
+proyectomodulo3/
+├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/co/edu/unbosque/tstyle/
+│   │   │   │   ├── config/
+│   │   │   ├── exception/
+│   │   │   ├── security/
+│   │   │   │   ├── config/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   └── service/
+│   │   │   └── user/
+│   │   │       ├── controller/
+│   │   │       ├── dto/
+│   │   │       ├── enums/
+│   │   │       ├── model/
+│   │   │       ├── repository/
+│   │   │       └── service/
+│   │   └── resources/
+│   ├── pom.xml
+│   └── mvnw
+│
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
 
-- `price` y `currency` son los valores originales del proveedor; no se convierte moneda.
-- `providerAvailable` es la disponibilidad **informada por el proveedor** y puede ser `null`
-  si no la informa. No es stock interno.
-- Un producto se identifica por **proveedor + externalId**, nunca por título.
-- El campo se llamaba `providerAvalaible` (typo); ahora es `providerAvailable`.
-  El nombre de la columna en BD (`provider_avalaible`) no se tocó.
+## Backend Features
 
-Errores: se usan `BusinessException` (400), `ResourceNotFoundException` (404) y
-`ExternalServiceException` (503) a través de `GlobalExceptionHandler`.
+### User Management
 
-## Importar el JSON de datos del catálogo
+- User entity implemented with JPA.
+- User roles defined through an enumeration (`CLIENT` and `ADMIN`).
+- User repository implemented with Spring Data JPA.
+- User registration service.
+- Email normalization and duplicate email validation.
+- Automatic assignment of the `CLIENT` role during public registration.
+- Password hashing using BCrypt.
+- REST controller for user registration.
 
-Es un JSON de **registros de productos**, distinto del JSON de matriz/esquema del profesor.
-Formato (una lista):
+### API Endpoints
 
-```json
-[
-  {
-    "provider": "NombreProveedor",
-    "externalId": "ID-1",
-    "name": "Nombre",
-    "description": "Opcional",
-    "imageUrl": "https://...",
-    "price": 59900,
-    "currency": "COP",
-    "externalUrl": "https://...",
-    "category": "Camisetas",
-    "providerAvailable": true
-  }
-]
+| Method | Endpoint | Description | Status |
+|---|---|---|---|
+| POST | `/api/users/register` | Register a new user | Implemented |
+
+### Error Handling
+
+The backend includes centralized exception handling for:
+
+- Business rule violations.
+- Duplicate resources.
+- Resources not found.
+- Request validation errors.
+- Unexpected server errors.
+
+## Security
+
+The current implementation includes:
+
+- BCrypt password hashing.
+- Request validation.
+- User role definitions.
+- Automatic assignment of the client role during public registration.
+
+Authentication, authorization, and protected endpoints are part of the upcoming development stages.
+
+## Database
+
+The backend is designed to use MySQL as its relational database management system.
+
+Spring Data JPA is used to manage persistence operations and map Java entities to database tables.
+
+Hibernate schema generation is currently disabled to keep database changes under controlled management.
+
+```properties
+spring.jpa.open-in-view=false
+spring.jpa.hibernate.ddl-auto=none
 ```
 
-Para ejecutarlo: `CATALOG_IMPORT_ENABLED=true CATALOG_IMPORT_PATH=file:/ruta/catalogo.json`
-y arrancar la aplicación. Cada registro se valida; los inválidos se omiten, se registran en el
-log con su posición y no detienen los demás. Reimportar actualiza (no duplica) por proveedor + externalId.
-Las tablas deben existir antes (generadas por el mecanismo del profesor).
+**Important:** Database credentials and connection details must remain private and must never be committed to the repository.
 
-## Pruebas
+## Testing
 
+The backend uses JUnit 5 and Mockito for automated testing.
+
+The latest complete Maven verification reported:
+
+- 49 tests executed.
+- 0 failures.
+- 0 errors.
+- Successful WAR generation.
+
+Testing covers:
+
+- User model behavior.
+- DTO validation.
+- Service business logic.
+- Password encoding.
+- Exception handling.
+- REST controller responses.
+
+## Prerequisites
+
+- Java Development Kit (JDK) 21.
+- Maven (or the included Maven Wrapper).
+- MySQL access and database credentials for backend integration.
+- Git.
+- Node.js and npm for frontend development.
+
+## Installation Instructions
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Sammael01/proyectomodulo3.git
+cd proyectomodulo3/backend
 ```
+
+## Configuration
+
+Create or configure your local `application.properties` file inside `src/main/resources/`.
+
+Use the following template:
+
+```properties
+spring.application.name=YOUR_APPLICATION_NAME
+
+spring.datasource.url=YOUR_DATABASE_URL
+spring.datasource.username=YOUR_DATABASE_USERNAME
+spring.datasource.password=YOUR_DATABASE_PASSWORD
+spring.datasource.driver-class-name=YOUR_DATABASE_DRIVER
+
+spring.jpa.open-in-view=false
+spring.jpa.hibernate.ddl-auto=none
+```
+
+Replace the placeholders with the appropriate values for your development environment.
+
+For the current MySQL configuration, the JDBC driver is:
+
+```properties
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+```
+
+Do not commit real credentials or sensitive configuration files.
+
+## Build and Testing
+
+Using Windows:
+
+```bash
+mvnw.cmd clean verify
+```
+
+Using Linux or macOS:
+
+```bash
 ./mvnw clean verify
 ```
 
-`DatabaseConnectionTest` solo corre si existe `DB_URL`. Las demás usan mocks y datos controlados
-(`src/test/resources/catalog`).
+To run the application locally:
 
-## Bloqueos y pendientes documentados
+```bash
+mvnw.cmd spring-boot:run
+```
 
-- **Matriz JSON del profesor**: no se ha cotejado con las entidades `Product`, `Provider` y `Category`.
-  Hacerlo antes de generar la base de datos.
-- **Proveedor de ropa real**: no hay credenciales ni acceso autorizado verificado. Existe la interfaz
-  `ProviderAdapter` para conectarlo sin acoplar el catálogo; mientras tanto la fuente es la
-  importación JSON validada (`JsonCatalogAdapter`). No se afirma que haya integración real con ningún proveedor.
-- **Endpoint de importación por HTTP**: no se expone porque aún no existe autorización por rol ADMIN
-  (módulo A). Por eso la importación corre solo al arrancar.
-- **Tráileres**: provienen de los videos de YouTube que informa TMDB; no se usa la API de YouTube.
-- **Caché del catálogo externo / límites por proveedor**: la caché en memoria aplica a películas;
-  los productos se sirven desde la base de datos sincronizada (`lastSyncedAt`).
+To generate the deployable WAR:
+
+```bash
+mvnw.cmd clean package
+```
+
+The generated WAR file is located in:
+
+```text
+target/tstylebackend-0.0.1-SNAPSHOT.war
+```
+
+## Development Workflow
+
+The project uses Git and GitHub for collaborative development.
+
+- `main`: main integration branch.
+- `back`: backend integration branch.
+- `front`: frontend integration branch.
+- `feature/*`: individual feature development branches.
+
+Changes are submitted through Pull Requests so team members can review, discuss, and approve implementations before merging.
+
+## Project Status
+
+**Current development focus: Backend user registration module.**
+
+### Implemented
+
+- Backend project structure.
+- User and authentication DTOs.
+- Global exception handling.
+- JPA user entity and repository.
+- User registration service.
+- BCrypt password encoding.
+- User registration REST endpoint.
+- Automated unit and HTTP tests.
+
+### In Progress
+
+- Real MySQL persistence integration.
+- End-to-end API verification.
+- User authentication and authorization.
+- Frontend and backend integration.
+- Marketplace and entertainment functionality.
+
+## Team
+
+T Style is developed as a collaborative university software engineering project.
+
+Team members and individual responsibilities will be documented as the project architecture and work assignments are finalized.
+
+---
+
+**T Style | Fashion, Technology and Entertainment.**
