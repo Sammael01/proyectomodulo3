@@ -35,7 +35,7 @@ public class TmdbClient {
      */
     public TmdbClient(RestClient.Builder builder,
             @Value("${tmdb.base-url:https://api.themoviedb.org/3}") String baseUrl,
-            @Value("${eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3ZjdhNzA0YTc0YzFkZWVmZmU0YzI1OWFjYjk2ODhiZCIsIm5iZiI6MTc5NDk5Nzk1MC4xOTYsInN1YiI6IjZhZmQ3ZWJlMzY0NDExZGM2YmYxODE4MiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.3SG5OSoo-5nRmCjW1qLcpXnfCmvrdIWhb2kcohqrgt0}") String accessToken) {
+            @Value("${0}") String accessToken) {
 
         this.configured = accessToken != null && !accessToken.isBlank();
 

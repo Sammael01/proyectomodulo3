@@ -6,12 +6,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-<<<<<<< HEAD:src/main/java/co/edu/unbosque/tstyle/repository/UserRepository.java
+
 import co.edu.unbosque.tstyle.model.User;
-=======
 import co.edu.unbosque.tstyle.user.enums.Role;
-import co.edu.unbosque.tstyle.user.model.User;
->>>>>>> b3d96ed4654d7773c3d07c2555796c9f2776c929:backend/src/main/java/co/edu/unbosque/tstyle/user/repository/UserRepository.java
 
 /**
  * Proporciona las operaciones de acceso a datos para los usuarios de T Style.
