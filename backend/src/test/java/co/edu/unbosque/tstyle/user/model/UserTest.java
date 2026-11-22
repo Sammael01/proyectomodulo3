@@ -29,7 +29,7 @@ class UserTest {
         User user = new User();
 
         assertFalse(user.isEmailVerified());
-        assertTrue(user.isEnabled());
+        assertFalse(user.isEnabled());
     }
 
     /**
@@ -50,7 +50,7 @@ class UserTest {
         assertEquals("hashedPassword", user.getPassword());
         assertEquals(Role.CLIENT, user.getRole());
         assertFalse(user.isEmailVerified());
-        assertTrue(user.isEnabled());
+        assertFalse(user.isEnabled());
     }
 
     /**

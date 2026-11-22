@@ -18,7 +18,8 @@ import jakarta.persistence.Table;
  * Representa un usuario registrado en la plataforma T Style.
  *
  * Esta clase define la información de los usuarios que se almacenará
- * en la base de datos.
+ * en la base de datos, incluyendo los datos de verificación,
+ * recuperación y control de versiones de autenticación.
  *
  * @author Equipo T Style
  */
@@ -71,6 +72,61 @@ public class User {
     private boolean enabled;
 
     /**
+     * Código de verificación almacenado mediante hash.
+     */
+    @Column(length = 255)
+    private String verificationCodeHash;
+
+    /**
+     * Fecha y hora de vencimiento del código de verificación.
+     */
+    private LocalDateTime verificationExpiresAt;
+
+    /**
+     * Número de intentos de verificación realizados.
+     */
+    @Column(nullable = false)
+    private int verificationAttempts;
+
+    /**
+     * Fecha y hora del último envío del código de verificación.
+     */
+    private LocalDateTime lastVerificationSentAt;
+
+    /**
+     * Código de recuperación de contraseña almacenado mediante hash.
+     */
+    @Column(length = 255)
+    private String resetCodeHash;
+
+    /**
+     * Fecha y hora de vencimiento del código de recuperación.
+     */
+    private LocalDateTime resetExpiresAt;
+
+    /**
+     * Número de intentos de validación del código de recuperación.
+     */
+    @Column(nullable = false)
+    private int resetAttempts;
+
+    /**
+     * Fecha y hora del último envío del código de recuperación.
+     */
+    private LocalDateTime lastResetSentAt;
+
+    /**
+     * Fecha y hora del último cambio de contraseña.
+     */
+    private LocalDateTime passwordChangedAt;
+
+    /**
+     * Versión actual de autenticación del usuario.
+     */
+    @Column(nullable = false)
+    private int tokenVersion;
+
+    /**
      * Fecha y hora de creación del usuario.
      */
     @Column(nullable = false, updatable = false)
@@ -81,7 +137,10 @@ public class User {
      */
     public User() {
         this.emailVerified = false;
-        this.enabled = true;
+        this.enabled = false;
+        this.verificationAttempts = 0;
+        this.resetAttempts = 0;
+        this.tokenVersion = 0;
     }
 
     /**
@@ -98,7 +157,10 @@ public class User {
         this.password = password;
         this.role = role;
         this.emailVerified = false;
-        this.enabled = true;
+        this.enabled = false;
+        this.verificationAttempts = 0;
+        this.resetAttempts = 0;
+        this.tokenVersion = 0;
     }
 
     /**
@@ -165,6 +227,86 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getVerificationCodeHash() {
+        return verificationCodeHash;
+    }
+
+    public void setVerificationCodeHash(String verificationCodeHash) {
+        this.verificationCodeHash = verificationCodeHash;
+    }
+
+    public LocalDateTime getVerificationExpiresAt() {
+        return verificationExpiresAt;
+    }
+
+    public void setVerificationExpiresAt(LocalDateTime verificationExpiresAt) {
+        this.verificationExpiresAt = verificationExpiresAt;
+    }
+
+    public int getVerificationAttempts() {
+        return verificationAttempts;
+    }
+
+    public void setVerificationAttempts(int verificationAttempts) {
+        this.verificationAttempts = verificationAttempts;
+    }
+
+    public LocalDateTime getLastVerificationSentAt() {
+        return lastVerificationSentAt;
+    }
+
+    public void setLastVerificationSentAt(LocalDateTime lastVerificationSentAt) {
+        this.lastVerificationSentAt = lastVerificationSentAt;
+    }
+
+    public String getResetCodeHash() {
+        return resetCodeHash;
+    }
+
+    public void setResetCodeHash(String resetCodeHash) {
+        this.resetCodeHash = resetCodeHash;
+    }
+
+    public LocalDateTime getResetExpiresAt() {
+        return resetExpiresAt;
+    }
+
+    public void setResetExpiresAt(LocalDateTime resetExpiresAt) {
+        this.resetExpiresAt = resetExpiresAt;
+    }
+
+    public int getResetAttempts() {
+        return resetAttempts;
+    }
+
+    public void setResetAttempts(int resetAttempts) {
+        this.resetAttempts = resetAttempts;
+    }
+
+    public LocalDateTime getLastResetSentAt() {
+        return lastResetSentAt;
+    }
+
+    public void setLastResetSentAt(LocalDateTime lastResetSentAt) {
+        this.lastResetSentAt = lastResetSentAt;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(LocalDateTime passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     public LocalDateTime getCreatedAt() {
