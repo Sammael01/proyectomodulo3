@@ -15,21 +15,35 @@ import co.edu.unbosque.tstyle.exception.BusinessException;
 import co.edu.unbosque.tstyle.dto.PageResponse;
 import co.edu.unbosque.tstyle.dto.ProductResponse;
 import co.edu.unbosque.tstyle.service.ProductService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Tag(name = "Productos", description = "Consulta pública del catálogo de productos")
+/**
+ * Controlador de consulta pública del catálogo de productos.
+ *
+ * @author Equipo T Style
+ */
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
     private static final int MAX_PAGE_SIZE = 50;
     private static final Set<String> SORT_FIELDS = Set.of("name", "price", "id");
 
     private final ProductService productService;
 
+    /**
+     * Constructor del controlador de productos.
+     *
+     * @param productService servicio de consulta del catálogo
+     */
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
+    /**
+     * Lista productos con filtros, paginación y orden.
+     *
+     *
+     */
     @GetMapping
     public ResponseEntity<PageResponse<ProductResponse>> list(
             @RequestParam(required = false) Long categoryId,
@@ -39,6 +53,7 @@ public class ProductController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
+
         if (!SORT_FIELDS.contains(sortBy)) {
             throw new BusinessException("Campo de orden no permitido: " + sortBy);
         }
@@ -54,6 +69,10 @@ public class ProductController {
         return ResponseEntity.ok(productService.search(categoryId, providerId, search, pageable));
     }
 
+    /**
+     * Consulta un producto por su identificador.
+     *
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getById(id));

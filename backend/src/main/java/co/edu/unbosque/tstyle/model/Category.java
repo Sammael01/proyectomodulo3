@@ -7,9 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ *
+ * Representa una categoria de productos del catalogo
+ *
+ * @author Sebastián
+ */
 @Entity
 @Table(name = "category")
 public class Category {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -18,7 +25,15 @@ public class Category {
 	private String name;
 
 	protected Category() {
+
 	}
+
+	/**
+	 *
+	 * Crea una categoria
+	 *
+	 * @param name nombre unico de la categoria
+	 */
 
 	public Category(String name) {
 		this.name = name;
