@@ -40,7 +40,15 @@
       }
     </div>
 
-    @if (results().length) {
+    @if (catalog.error()) {
+      <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2" role="alert">
+        <span class="flex-grow-1">{{ catalog.error() }}</span>
+        <button type="button" class="btn btn-sm btn-outline-light" (click)="catalog.load()">Reintentar</button>
+      </div>
+    }
+    @if (catalog.loading()) {
+      <div class="text-center py-5 text-body-secondary"><span class="spinner-border" aria-hidden="true"></span><p class="mt-3">Cargando catálogo…</p></div>
+    } @else if (results().length) {
       <div class="row g-3 g-lg-4">
         @for (p of results(); track p.id; let i = $index) {
           <div class="col-6 col-md-4 col-xl-3 animate__animated animate__fadeInUp ts-stagger" [style.--i]="i % 8">

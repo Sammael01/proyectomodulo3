@@ -1,59 +1,90 @@
-# TStyle
+# T-Style — Frontend (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+Frontend de la tienda T-Style. Se conecta al backend unificado (Spring Boot en Apache Tomcat) y se despliega en Netlify.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+| Herramienta | Versión |
+|---|---|
+| Node.js | `^22.22.3` o `^24.15.0` (exigido por Angular CLI 22; ver `engines` en `package.json`) |
+| npm | 10.x (incluido con Node 22) |
+| Angular CLI | 22.2.x (se instala como dependencia del proyecto; no requiere instalación global) |
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Instalación
 
 ```bash
-ng generate component component-name
+cd t-style
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Ejecución local
+
+El backend debe estar corriendo en `http://localhost:8080` (contexto `/api`).
+
+| Comando | Ambiente | URL del backend | Notas |
+|---|---|---|---|
+| `npm start` | `environment.development.ts` | `http://localhost:8080/api` | Petición directa. El backend debe permitir CORS para `http://localhost:4200`. |
+| `npm run start:proxy` | `environment.proxy.ts` | `/api` → proxy → `localhost:8080` | Usa `proxy.conf.json`. No requiere CORS. **Solo desarrollo.** |
+
+Abrir `http://localhost:4200/`.
+
+## Compilación de producción
 
 ```bash
-ng generate --help
+npm run build        # configuración production (por defecto)
+npm run build:dev    # configuración development, sin optimizar
 ```
 
-## Building
+Salida: `dist/t-style/browser/` (esa es la carpeta que se publica; nunca `src/` ni la raíz del proyecto).
 
-To build the project run:
+## Pruebas
 
 ```bash
-ng build
+npm test             # Vitest, una sola ejecución
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Ambientes y URL del backend
 
-## Running unit tests
+Los servicios **siempre** importan `src/environments/environment.ts`. Angular lo reemplaza en compilación mediante `fileReplacements` (`angular.json`):
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+| Archivo | Se usa en | `apiUrl` |
+|---|---|---|
+| `environment.ts` | `ng build` (producción / Netlify) | URL absoluta del backend en Tomcat — **PENDIENTE** |
+| `environment.development.ts` | `ng serve`, `npm run build:dev` | `http://localhost:8080/api` |
+| `environment.proxy.ts` | `npm run start:proxy` | `/api` |
 
-```bash
-ng test
-```
+**Antes de desplegar en producción**, reemplazar en `src/environments/environment.ts` el valor `https://backend-pendiente.invalid/api` por la URL pública real del backend (formato `https://<host>/<contexto>/api`), confirmada por el integrante A. El dominio `.invalid` nunca resuelve, de modo que un despliegue sin configurar falla de forma visible en lugar de llamar a un servidor equivocado.
 
-## Running end-to-end tests
+Las rutas de cada endpoint están centralizadas en `src/app/core/api-endpoints.ts`. Una ruta en `null` significa que está pendiente de confirmar: el servicio sigue usando datos locales y no envía peticiones. Al confirmar una ruta con A, B o C se escribe allí y el servicio pasa automáticamente a consumir el backend.
 
-For end-to-end (e2e) testing, run:
+## Autenticación
 
-```bash
-ng e2e
-```
+- El JWT se guarda en `localStorage` (`tstyle_session`) y el interceptor (`core/auth.interceptor.ts`) agrega `Authorization: Bearer <token>` **solo** a peticiones cuyo origen y ruta coinciden con `apiUrl` (relativa o absoluta). YouTube, CDNs y otros servicios nunca reciben el token.
+- Un `401` de una petición autenticada cierra la sesión y redirige a `/login`.
+- Los guards de Angular solo mejoran la navegación. La autorización real la hace Spring Security; el guard de `/admin` además confirma el rol con `/auth/me` antes de abrir el panel.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Despliegue en Netlify
 
-## Additional Resources
+1. Configurar la URL real del backend en `src/environments/environment.ts` (ver arriba).
+2. En Netlify, crear el sitio desde el repositorio y configurar:
+   - **Base directory:** la carpeta que contiene este README (`t-style`).
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist/t-style/browser`
+   - Node 22 (ya definido en `netlify.toml` mediante `NODE_VERSION`).
+   `netlify.toml` contiene estos valores, por lo que Netlify los toma automáticamente.
+3. `public/_redirects` (`/*  /index.html  200`) se copia al build y permite recargar rutas internas (`/coleccion`, `/producto/123`, `/admin`, …) sin error 404.
+4. Entregar al integrante A el dominio exacto de Netlify (p. ej. `https://<sitio>.netlify.app`) para configurar CORS.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## CORS
+
+CORS se configura en el backend, no en Angular. El backend debe permitir:
+
+- **Origen exacto** de producción (dominio de Netlify) y, para desarrollo, `http://localhost:4200`. No usar `*` en peticiones autenticadas.
+- **Encabezados:** `Authorization`, `Content-Type`.
+- **Métodos:** los que use la aplicación: `GET`, `POST`, `PUT`, `PATCH`, `DELETE` y `OPTIONS` (preflight). Ajustar cuando B y C confirmen sus endpoints.
+
+## Seguridad
+
+- No incluir credenciales, tokens ni claves privadas en el código. El token de TMDB vive solo en el backend.
+- `youtubeApiKey` (opcional) solo puede ser una clave de navegador restringida por dominio (referrer de Netlify) y por API (YouTube Data API v3).
+- Mientras no exista una pasarela de pago real (`core/checkout.config.ts`), tarjeta y PSE se muestran como simulación; sus datos no se guardan, no se registran ni se envían al backend.

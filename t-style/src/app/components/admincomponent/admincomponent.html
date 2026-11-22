@@ -5,6 +5,16 @@
       <h1 class="ts-heading">Administración</h1>
     </div>
 
+    @if (catalog.source === 'local' || orders.source === 'local') {
+      <div class="alert alert-secondary d-flex gap-2 small" role="status"><i class="bi bi-info-circle"></i>Modo demostración: {{ catalog.source === 'local' ? 'productos' : '' }}{{ catalog.source === 'local' && orders.source === 'local' ? ' y ' : '' }}{{ orders.source === 'local' ? 'pedidos' : '' }} se guardan solo en este navegador.</div>
+    }
+    @for (msg of [actionError() ?? catalog.error() ?? orders.error()]; track msg) {
+      @if (msg) { <div class="alert alert-danger" role="alert">{{ msg }}</div> }
+    }
+    @if (catalog.loading() || orders.loading()) {
+      <div class="d-flex align-items-center gap-2 text-body-secondary small mb-3"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando datos…</div>
+    }
+
     <div class="row g-3 mb-4">
       @for (s of statCards(); track s.label; let i = $index) {
         <div class="col-6 col-lg-3 animate__animated animate__zoomIn ts-stagger" [style.--i]="i">
@@ -36,7 +46,7 @@
               (input)="filter.set($any($event.target).value)" aria-label="Filtrar productos" />
           </div>
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetCatalog()"><i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetCatalog()" [hidden]="catalog.source !== 'local'"><i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar</button>
             <button type="button" class="btn btn-sm btn-warning text-dark" (click)="newProduct()"><i class="bi bi-plus-lg me-1"></i>Nuevo producto</button>
           </div>
         </div>
@@ -75,7 +85,7 @@
             </div>
             <div class="card-footer d-flex gap-2 justify-content-end">
               <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancel()">Cancelar</button>
-              <button type="submit" class="btn btn-sm btn-warning text-dark"><i class="bi bi-check2 me-1"></i>Guardar</button>
+              <button type="submit" class="btn btn-sm btn-warning text-dark" [disabled]="saving()">@if (saving()) { <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> } @else { <i class="bi bi-check2 me-1"></i> }Guardar</button>
             </div>
           </form>
         }
@@ -99,7 +109,7 @@
                   <td class="text-end text-nowrap">
                     <div class="btn-group btn-group-sm">
                       <button type="button" class="btn btn-outline-secondary" (click)="edit(p)" [attr.aria-label]="'Editar ' + p.name"><i class="bi bi-pencil"></i></button>
-                      <button type="button" class="btn btn-outline-danger" (click)="remove(p)" [attr.aria-label]="'Eliminar ' + p.name"><i class="bi bi-trash3"></i></button>
+                      <button type="button" class="btn btn-outline-danger" (click)="remove(p)" [disabled]="saving()" [attr.aria-label]="'Eliminar ' + p.name"><i class="bi bi-trash3"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -123,7 +133,7 @@
                 <td>{{ o.items.length }}</td>
                 <td>{{ o.total | money }}</td>
                 <td>
-                  <select class="form-select form-select-sm" [value]="o.status" (change)="setStatus(o.id, $any($event.target).value)" aria-label="Estado">
+                  <select class="form-select form-select-sm" [value]="o.status" (change)="setStatus(o.id, $any($event.target).value)" [disabled]="saving()" aria-label="Estado">
                     @for (s of statuses; track s) { <option [value]="s" [selected]="s === o.status">{{ s }}</option> }
                   </select>
                 </td>

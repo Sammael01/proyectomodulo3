@@ -2,6 +2,9 @@ import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { map, of, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { API_BASE_URL, joinApiUrl } from './api-config';
+import { API_ENDPOINTS } from './api-endpoints';
+import { apiMessage } from './api-error';
 import { Video } from './models';
 
 const SRC = {
@@ -12,6 +15,7 @@ const SRC = {
 
 const gradient = (a: string, b: string) => `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
 
+/** Videos de DEMOSTRACIÓN (no son contenido real). Se reemplazan cuando exista la fuente definitiva. */
 const LOCAL_VIDEOS: Video[] = [
   { id: 'v1', title: 'Lookbook Otoño 2026', category: 'Lookbook', src: SRC.flower, poster: gradient('#181919', '#5d6812'), views: 48210, likes: 3120, date: 'Hace 2 días', productIds: ['p1', 'p2'],
     description: 'La nueva colección en movimiento: capas, tonos tierra y siluetas oversize para la temporada.' },
@@ -41,16 +45,75 @@ interface YtVideos {
   }[];
 }
 
+/**
+ * ADAPTADOR PENDIENTE: convierte el DTO de películas/trailers (TMDB vía backend del módulo B)
+ * al modelo `Video`. Ajustar cuando B publique el DTO definitivo.
+ */
+export function toVideo(raw: unknown): Video {
+  const dto = raw as Partial<Video> & { id: string | number };
+  return {
+    id: String(dto.id),
+    title: dto.title ?? '',
+    category: dto.category ?? 'Trailer',
+    description: dto.description ?? '',
+    poster: dto.poster ?? gradient('#181919', '#2c2e2d'),
+    thumbnail: dto.thumbnail,
+    src: dto.src,
+    youtubeId: dto.youtubeId,
+    channel: dto.channel,
+    views: dto.views ?? 0,
+    likes: dto.likes ?? 0,
+    date: dto.date ?? '',
+    productIds: dto.productIds ?? [],
+  };
+}
+
+/**
+ * Fuente de videos, por prioridad:
+ *  1. Backend (módulo B, TMDB) cuando `API_ENDPOINTS.videos.list` esté confirmado.
+ *     El token de TMDB vive SOLO en el backend; el frontend nunca lo recibe.
+ *  2. YouTube Data API, si hay una clave PÚBLICA de navegador restringida por dominio y API.
+ *  3. Videos de demostración locales.
+ */
 @Injectable({ providedIn: 'root' })
 export class VideoService {
+  /** Cliente sin interceptores: las peticiones a YouTube nunca llevan el JWT. */
   private readonly http = new HttpClient(inject(HttpBackend));
+  /** Cliente con interceptores para el backend propio. */
+  private readonly apiHttp = inject(HttpClient);
+  private readonly api = inject(API_BASE_URL);
 
   readonly videos = signal<Video[]>(LOCAL_VIDEOS);
-  readonly source = signal<'local' | 'youtube'>('local');
+  readonly source = signal<'local' | 'youtube' | 'api'>('local');
   readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
 
   constructor() {
-    if (environment.youtubeApiKey) this.loadYoutube(environment.youtubeQuery);
+    if (API_ENDPOINTS.videos.list) this.loadFromBackend();
+    else if (environment.youtubeApiKey) this.loadYoutube(environment.youtubeQuery);
+  }
+
+  /** Consume el servicio definitivo de videos del backend. Si falla, se muestra el error y se conservan los videos actuales. */
+  loadFromBackend(): void {
+    const route = API_ENDPOINTS.videos.list;
+    if (!route) return;
+    this.loading.set(true);
+    this.error.set(null);
+    this.apiHttp.get<unknown>(joinApiUrl(this.api, route)).subscribe({
+      next: (body) => {
+        const list = Array.isArray(body) ? body : ((body as { content?: unknown[] })?.content ?? []);
+        const videos = list.map(toVideo);
+        if (videos.length) {
+          this.videos.set(videos);
+          this.source.set('api');
+        }
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(apiMessage(err, 'No fue posible cargar los videos.'));
+        this.loading.set(false);
+      },
+    });
   }
 
   loadYoutube(query: string): void {
@@ -92,7 +155,10 @@ export class VideoService {
           }
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: (err) => {
+          this.error.set(apiMessage(err, 'No fue posible cargar los videos de YouTube.'));
+          this.loading.set(false);
+        },
       });
   }
 }

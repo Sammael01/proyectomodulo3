@@ -1,9 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Observable, finalize } from 'rxjs';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { apiMessage } from '../../core/api-error';
 import { AuthService } from '../../core/auth.service';
-import { CatalogService } from '../../core/catalog.service';
+import { CatalogService, ProductDraft } from '../../core/catalog.service';
 import { CurrencyService } from '../../core/currency.service';
 import { Order, Product } from '../../core/models';
 import { MoneyPipe } from '../../core/money.pipe';
@@ -16,7 +18,11 @@ import { ToastService } from '../../core/toast.service';
   templateUrl: './admincomponent.html',
   styleUrl: './admincomponent.css',
 })
-export class Admincomponent {
+/**
+ * Panel de administración. Ocultar botones o proteger la ruta no es seguridad:
+ * cada operación debe ser autorizada por el backend con el rol ADMIN.
+ */
+export class Admincomponent implements OnInit {
   protected readonly auth = inject(AuthService);
   protected readonly catalog = inject(CatalogService);
   protected readonly orders = inject(OrderService);
@@ -28,6 +34,8 @@ export class Admincomponent {
   protected readonly editing = signal<string | null>(null);
   protected readonly formOpen = signal(false);
   protected readonly filter = signal('');
+  protected readonly saving = signal(false);
+  protected readonly actionError = signal<string | null>(null);
   protected readonly statuses: Order['status'][] = ['Confirmado', 'En preparación', 'Enviado', 'Entregado'];
 
   protected readonly form = this.fb.group({
@@ -67,6 +75,12 @@ export class Admincomponent {
     ];
   });
 
+  ngOnInit(): void {
+    // En modo local no hacen nada; en modo API consultan datos reales.
+    this.catalog.load();
+    this.orders.loadAll();
+  }
+
   protected newProduct(): void {
     this.editing.set(null);
     this.form.reset();
@@ -96,13 +110,12 @@ export class Admincomponent {
   }
 
   protected save(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.saving()) {
       this.form.markAllAsTouched();
       return;
     }
     const v = this.form.getRawValue();
-    const product: Product = {
-      id: this.editing() ?? this.catalog.newId(),
+    const draft: ProductDraft = {
       name: v.name.trim(),
       category: v.category.trim(),
       price: Math.round(v.price),
@@ -114,26 +127,38 @@ export class Admincomponent {
       isNew: v.isNew,
       description: v.description.trim(),
     };
-    this.catalog.save(product);
-    this.toast.show(this.editing() ? 'Producto actualizado' : 'Producto creado');
-    this.cancel();
+    const id = this.editing();
+    this.run(id ? this.catalog.update({ ...draft, id }) : this.catalog.create(draft), () => {
+      this.toast.show(id ? 'Producto actualizado' : 'Producto creado');
+      this.cancel();
+    });
   }
 
   protected remove(p: Product): void {
-    if (!confirm(`¿Eliminar "${p.name}" del catálogo?`)) return;
-    this.catalog.remove(p.id);
-    this.toast.show('Producto eliminado');
+    if (this.saving() || !confirm(`¿Eliminar "${p.name}" del catálogo?`)) return;
+    this.run(this.catalog.delete(p.id), () => this.toast.show('Producto eliminado'));
   }
 
   protected resetCatalog(): void {
+    if (this.catalog.source !== 'local') return;
     if (!confirm('¿Restaurar el catálogo original? Se perderán los cambios.')) return;
     this.catalog.reset();
     this.toast.show('Catálogo restaurado');
   }
 
   protected setStatus(id: string, status: string): void {
-    this.orders.setStatus(id, status as Order['status']);
-    this.toast.show(`Pedido ${id}: ${status}`);
+    if (this.saving()) return;
+    this.run(this.orders.updateStatus(id, status as Order['status']), () => this.toast.show(`Pedido ${id}: ${status}`));
+  }
+
+  /** Ejecuta una operación de escritura con estado de carga, bloqueo de duplicados y error real del backend. */
+  private run<T>(operation: Observable<T>, done: () => void): void {
+    this.saving.set(true);
+    this.actionError.set(null);
+    operation.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: () => done(),
+      error: (err) => this.actionError.set(apiMessage(err, 'No fue posible completar la operación.')),
+    });
   }
 
   protected invalid(name: keyof typeof this.form.controls): boolean {

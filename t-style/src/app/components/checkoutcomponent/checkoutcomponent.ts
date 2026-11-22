@@ -1,8 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
+import { finalize } from 'rxjs';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { apiMessage } from '../../core/api-error';
 import { AuthService } from '../../core/auth.service';
 import { CartService } from '../../core/cart.service';
+import { CHECKOUT_CONFIG } from '../../core/checkout.config';
 import { MoneyPipe } from '../../core/money.pipe';
 import { Order, PaymentMethod } from '../../core/models';
 import { OrderService } from '../../core/order.service';
@@ -47,11 +50,16 @@ export class Checkoutcomponent {
     'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés', 'Santander', 'Sucre', 'Tolima',
     'Valle del Cauca', 'Vaupés', 'Vichada',
   ];
-  protected readonly payments: { key: PaymentMethod; label: string; icon: string; hint: string }[] = [
-    { key: 'card', label: 'Tarjeta', icon: 'bi-credit-card', hint: 'Crédito o débito' },
-    { key: 'pse', label: 'PSE', icon: 'bi-bank', hint: 'Débito desde tu banco' },
-    { key: 'cod', label: 'Contraentrega', icon: 'bi-cash-coin', hint: 'Pagas al recibir' },
-  ];
+  /** Sin pasarela real, tarjeta/PSE no se presentan como transacción real. */
+  protected readonly simulatedPayment = !CHECKOUT_CONFIG.gatewayAvailable;
+  protected readonly payments: { key: PaymentMethod; label: string; icon: string; hint: string; disabled: boolean }[] = [
+    { key: 'card' as PaymentMethod, label: 'Tarjeta', icon: 'bi-credit-card', hint: 'Crédito o débito' },
+    { key: 'pse' as PaymentMethod, label: 'PSE', icon: 'bi-bank', hint: 'Débito desde tu banco' },
+    { key: 'cod' as PaymentMethod, label: 'Contraentrega', icon: 'bi-cash-coin', hint: 'Pagas al recibir' },
+  ].map((m) => {
+    const disabled = this.orders.source === 'api' && (!CHECKOUT_CONFIG.backendMethods.includes(m.key) || (m.key !== 'cod' && !CHECKOUT_CONFIG.gatewayAvailable));
+    return { ...m, hint: this.simulatedPayment && m.key !== 'cod' ? (disabled ? 'No disponible' : 'Simulación') : m.hint, disabled };
+  });
 
   protected readonly form = this.fb.group({
     fullName: [this.auth.user()?.name ?? '', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -60,7 +68,7 @@ export class Checkoutcomponent {
     city: ['', Validators.required],
     department: ['', Validators.required],
     notes: [''],
-    payment: ['card' as PaymentMethod],
+    payment: [this.firstAvailablePayment()],
     cardName: [''],
     cardNumber: [''],
     cardExpiry: [''],
@@ -71,9 +79,10 @@ export class Checkoutcomponent {
   protected readonly submitted = signal(false);
   protected readonly processing = signal(false);
   protected readonly order = signal<Order | null>(null);
+  protected readonly submitError = signal<string | null>(null);
 
   constructor() {
-    this.updatePaymentValidators('card');
+    this.updatePaymentValidators(this.form.controls.payment.value);
     this.form.controls.payment.valueChanges.subscribe((method) => this.updatePaymentValidators(method));
   }
 
@@ -94,21 +103,37 @@ export class Checkoutcomponent {
 
   protected submit(): void {
     this.submitted.set(true);
-    if (this.form.invalid || this.processing()) {
+    if (this.processing()) return; // evita envíos duplicados del mismo pedido
+    if (this.form.invalid || this.payments.find((m) => m.key === this.form.controls.payment.value)?.disabled) {
       this.form.markAllAsTouched();
       return;
     }
     this.processing.set(true);
+    this.submitError.set(null);
     const v = this.form.getRawValue();
-    setTimeout(() => {
-      const placed = this.orders.place(
-        { fullName: v.fullName.trim(), phone: v.phone, address: v.address.trim(), city: v.city.trim(), department: v.department, notes: v.notes.trim() },
-        v.payment
-      );
-      this.order.set(placed);
-      this.processing.set(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 1200);
+    // Solo se envían datos de envío y el método de pago. Los datos de tarjeta no salen del formulario.
+    const shipping = { fullName: v.fullName.trim(), phone: v.phone, address: v.address.trim(), city: v.city.trim(), department: v.department, notes: v.notes.trim() };
+    this.orders
+      .submit(shipping, v.payment)
+      .pipe(finalize(() => this.processing.set(false)))
+      .subscribe({
+        next: (placed) => {
+          this.clearCardData();
+          this.order.set(placed);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        error: (err) => this.submitError.set(apiMessage(err, 'No fue posible crear tu pedido. Intenta de nuevo.')),
+      });
+  }
+
+  /** Borra del formulario los datos sensibles de tarjeta. */
+  private clearCardData(): void {
+    const c = this.form.controls;
+    [c.cardName, c.cardNumber, c.cardExpiry, c.cardCvv].forEach((ctrl) => ctrl.reset('', { emitEvent: false }));
+  }
+
+  private firstAvailablePayment(): PaymentMethod {
+    return this.payments.find((m) => !m.disabled)?.key ?? 'cod';
   }
 
   private updatePaymentValidators(method: PaymentMethod): void {

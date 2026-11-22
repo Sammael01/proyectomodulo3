@@ -36,6 +36,7 @@ export class Profilecomponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.orders.loadMine(); // en modo local no hace nada
   }
 
   protected load(): void {

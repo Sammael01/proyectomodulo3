@@ -14,7 +14,7 @@
               <span>{{ i.price * i.qty | money }}</span>
             </li>
           }
-          <li class="list-group-item d-flex fw-semibold fs-5"><span class="flex-grow-1">Total pagado</span><span class="text-warning">{{ o.total | money }}</span></li>
+          <li class="list-group-item d-flex fw-semibold fs-5"><span class="flex-grow-1">{{ simulatedPayment && o.payment !== 'cod' ? 'Total (pago simulado)' : 'Total' }}</span><span class="text-warning">{{ o.total | money }}</span></li>
         </ul>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
           <a routerLink="/perfil" fragment="pedidos" class="btn ts-btn">Ver mis pedidos</a>
@@ -76,7 +76,7 @@
               <div class="row g-2">
                 @for (m of payments; track m.key) {
                   <div class="col-12 col-sm-4">
-                    <input type="radio" class="btn-check" formControlName="payment" [value]="m.key" [id]="'pay-' + m.key" />
+                    <input type="radio" class="btn-check" formControlName="payment" [value]="m.key" [id]="'pay-' + m.key" [attr.disabled]="m.disabled ? '' : null" />
                     <label class="btn btn-outline-secondary w-100 h-100 text-start ts-method" [for]="'pay-' + m.key">
                       <i class="bi d-block fs-4 mb-1" [class]="m.icon"></i>
                       <strong class="d-block">{{ m.label }}</strong>
@@ -86,6 +86,9 @@
                 }
               </div>
 
+              @if (simulatedPayment && form.controls.payment.value !== 'cod') {
+                <div class="alert alert-warning d-flex gap-2 mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i>Pago simulado: no hay pasarela de pago conectada, no se realiza ningún cobro y los datos ingresados no se guardan ni se envían.</div>
+              }
               @switch (form.controls.payment.value) {
                 @case ('card') {
                   <div class="row g-3 mt-2 animate__animated animate__fadeIn">
@@ -153,11 +156,14 @@
               </ul>
               <button type="submit" class="btn ts-btn w-100" [disabled]="processing()">
                 @if (processing()) {
-                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Procesando pago…
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Procesando pedido…
                 } @else {
-                  <i class="bi bi-lock"></i>Pagar {{ cart.total() | money }}
+                  <i class="bi bi-lock"></i>Confirmar pedido · {{ cart.total() | money }}
                 }
               </button>
+              @if (submitError()) {
+                <div class="alert alert-danger mt-3 mb-0 animate__animated animate__headShake" role="alert">{{ submitError() }}</div>
+              }
               @if (submitted() && form.invalid) {
                 <div class="invalid-feedback d-block text-center animate__animated animate__headShake">Revisa los campos marcados.</div>
               }

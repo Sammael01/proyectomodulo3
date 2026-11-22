@@ -12,7 +12,7 @@ type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'name';
   styleUrl: './catalogcomponent.css',
 })
 export class Catalogcomponent {
-  private readonly catalog = inject(CatalogService);
+  protected readonly catalog = inject(CatalogService);
   private readonly router = inject(Router);
 
   readonly categoria = input<string>();

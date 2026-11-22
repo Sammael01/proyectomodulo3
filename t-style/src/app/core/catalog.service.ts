@@ -1,9 +1,16 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, finalize, map, of, tap, throwError } from 'rxjs';
+import { API_BASE_URL, joinApiUrl } from './api-config';
+import { API_ENDPOINTS, PendingEndpointError, endpoint } from './api-endpoints';
+import { apiMessage } from './api-error';
 import { Product } from './models';
+import { DataSource, PageResult, toPageResult } from './remote-data';
 import { readStorage, writeStorage } from './storage';
 
 const CATALOG_KEY = 'tstyle_catalog';
 
+/** Productos de DEMOSTRACIÓN. Solo se usan mientras `API_ENDPOINTS.catalog.list` sea null. */
 const DEFAULT_PRODUCTS: Product[] = [
   { id: 'p1', name: 'Hoodie Oversize Block', category: 'Buzos', price: 159900, color: 'Negro', swatch: '#1d1f1e', sizes: ['S', 'M', 'L', 'XL'], isNew: true, stock: 24,
     description: 'Buzo de algodón perchado de 380 g con capota doble, hombro caído y bolsillo canguro. Corte oversize para un fit relajado.' },
@@ -31,12 +38,50 @@ const DEFAULT_PRODUCTS: Product[] = [
     description: 'Paquete de tres pares de medias de caña media en algodón con logo tejido.' },
 ];
 
+/** Datos editables de un producto (sin identificador: en modo API lo asigna el backend). */
+export type ProductDraft = Omit<Product, 'id'>;
+
+export interface CatalogQuery {
+  q?: string;
+  category?: string;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * ADAPTADOR PENDIENTE: convierte el DTO de producto del módulo B al modelo `Product`.
+ * Mientras no exista el DTO definitivo se asume la misma forma que `Product`;
+ * el identificador se normaliza a string (las rutas Angular usan string).
+ */
+export function toProduct(raw: unknown): Product {
+  const dto = raw as Product & { id: string | number };
+  return { ...dto, id: String(dto.id), sizes: Array.isArray(dto.sizes) ? dto.sizes : [] };
+}
+
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
-  private readonly _products = signal<Product[]>(readStorage(CATALOG_KEY, DEFAULT_PRODUCTS));
+  private readonly http = inject(HttpClient);
+  private readonly api = inject(API_BASE_URL);
+  private readonly routes = API_ENDPOINTS.catalog;
+  private readonly adminRoutes = API_ENDPOINTS.catalogAdmin;
+
+  /** `api` en cuanto B confirme el endpoint de listado; mientras tanto, catálogo de demostración. */
+  readonly source: DataSource = this.routes.list ? 'api' : 'local';
+
+  private readonly _products = signal<Product[]>(this.source === 'local' ? readStorage(CATALOG_KEY, DEFAULT_PRODUCTS) : []);
+  private readonly _page = signal<PageResult<Product> | null>(null);
+  private readonly _loading = signal(false);
+  private readonly _error = signal<string | null>(null);
 
   readonly products = this._products.asReadonly();
+  readonly page = this._page.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
   readonly categories = computed(() => [...new Set(this._products().map((p) => p.category))]);
+
+  constructor() {
+    if (this.source === 'api') this.load();
+  }
 
   byId(id: string): Product | undefined {
     return this._products().find((p) => p.id === id);
@@ -48,28 +93,127 @@ export class CatalogService {
     return [...same, ...others.filter((p) => p.category !== product.category)].slice(0, limit);
   }
 
-  save(product: Product): void {
-    this._products.update((list) =>
-      list.some((p) => p.id === product.id) ? list.map((p) => (p.id === product.id ? product : p)) : [...list, product]
+  /** Carga (o recarga) el catálogo desde el backend. En modo local no hace nada. */
+  load(query: CatalogQuery = {}): void {
+    if (this.source === 'local' || this._loading()) return;
+    this._loading.set(true);
+    this._error.set(null);
+    this.http
+      .get<unknown>(this.url(this.routes.list!), { params: this.params(query) })
+      .pipe(finalize(() => this._loading.set(false)))
+      .subscribe({
+        next: (body) => {
+          const page = toPageResult(body, toProduct);
+          this._page.set(page);
+          this._products.set(page.items);
+        },
+        error: (err) => this._error.set(apiMessage(err, 'No fue posible cargar el catálogo.')),
+      });
+  }
+
+  /** Consulta un producto por id. En modo API lo pide al backend si no está en memoria. */
+  fetchById(id: string): Observable<Product | undefined> {
+    const cached = this.byId(id);
+    if (this.source === 'local' || cached) return of(cached);
+    if (!this.routes.byId) return throwError(() => new PendingEndpointError('catalog.byId'));
+    return this.http.get<unknown>(this.url(endpoint(this.routes.byId, { id }))).pipe(
+      map(toProduct),
+      tap((product) => this.upsert(product))
     );
-    this.persist();
   }
 
-  remove(id: string): void {
-    this._products.update((list) => list.filter((p) => p.id !== id));
-    this.persist();
+  /** Búsqueda de productos. En modo local filtra los productos de demostración. */
+  search(query: CatalogQuery): Observable<PageResult<Product>> {
+    if (this.source === 'local') {
+      const q = query.q?.trim().toLowerCase() ?? '';
+      const items = this._products().filter(
+        (p) => (!q || `${p.name} ${p.category} ${p.color}`.toLowerCase().includes(q)) && (!query.category || p.category === query.category)
+      );
+      return of({ items, page: 0, size: items.length, totalItems: items.length, totalPages: 1 });
+    }
+    const route = this.routes.search ?? null;
+    if (!route) return throwError(() => new PendingEndpointError('catalog.search'));
+    return this.http.get<unknown>(this.url(route), { params: this.params(query) }).pipe(map((body) => toPageResult(body, toProduct)));
   }
 
+  // ---- Administración (en modo API el backend valida el rol ADMIN) ----
+
+  create(draft: ProductDraft): Observable<Product> {
+    if (this.source === 'local') {
+      const product = { ...draft, id: this.newId() };
+      this.save(product);
+      return of(product);
+    }
+    if (!this.adminRoutes.create) return throwError(() => new PendingEndpointError('catalogAdmin.create'));
+    return this.http.post<unknown>(this.url(this.adminRoutes.create), draft).pipe(map(toProduct), tap((p) => this.upsert(p)));
+  }
+
+  update(product: Product): Observable<Product> {
+    if (this.source === 'local') {
+      this.save(product);
+      return of(product);
+    }
+    if (!this.adminRoutes.update) return throwError(() => new PendingEndpointError('catalogAdmin.update'));
+    const { id, ...draft } = product;
+    return this.http
+      .put<unknown>(this.url(endpoint(this.adminRoutes.update, { id })), draft)
+      .pipe(map(toProduct), tap((p) => this.upsert(p)));
+  }
+
+  delete(id: string): Observable<void> {
+    if (this.source === 'local') {
+      this.remove(id);
+      return of(undefined);
+    }
+    if (!this.adminRoutes.remove) return throwError(() => new PendingEndpointError('catalogAdmin.remove'));
+    return this.http
+      .delete<void>(this.url(endpoint(this.adminRoutes.remove, { id })))
+      .pipe(tap(() => this._products.update((list) => list.filter((p) => p.id !== id))));
+  }
+
+  /** Solo modo local: restaura los productos de demostración. */
   reset(): void {
+    if (this.source !== 'local') return;
     this._products.set(DEFAULT_PRODUCTS);
     writeStorage(CATALOG_KEY, null);
   }
 
-  newId(): string {
+  private save(product: Product): void {
+    this.upsert(product);
+    this.persist();
+  }
+
+  private remove(id: string): void {
+    this._products.update((list) => list.filter((p) => p.id !== id));
+    this.persist();
+  }
+
+  private upsert(product: Product): void {
+    this._products.update((list) =>
+      list.some((p) => p.id === product.id) ? list.map((p) => (p.id === product.id ? product : p)) : [...list, product]
+    );
+  }
+
+  /** Identificador local SOLO para el modo demostración; en modo API lo asigna el backend. */
+  private newId(): string {
     return 'p' + Date.now().toString(36);
   }
 
   private persist(): void {
-    writeStorage(CATALOG_KEY, this._products());
+    if (this.source === 'local') writeStorage(CATALOG_KEY, this._products());
+  }
+
+  private url(path: string): string {
+    return joinApiUrl(this.api, path);
+  }
+
+  /** PENDIENTE: confirmar con B los nombres de los parámetros de búsqueda y paginación. */
+  private params(query: CatalogQuery): HttpParams {
+    let params = new HttpParams();
+    if (query.q) params = params.set('q', query.q);
+    if (query.category) params = params.set('category', query.category);
+    if (query.page !== undefined) params = params.set('page', query.page);
+    if (query.size !== undefined) params = params.set('size', query.size);
+    return params;
   }
 }

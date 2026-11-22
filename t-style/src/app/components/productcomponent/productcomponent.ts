@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
+import { apiMessage } from '../../core/api-error';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../core/cart.service';
 import { CatalogService } from '../../core/catalog.service';
@@ -13,7 +14,7 @@ import { Productcardcomponent } from '../productcardcomponent/productcardcompone
   styleUrl: './productcomponent.css',
 })
 export class Productcomponent {
-  private readonly catalog = inject(CatalogService);
+  protected readonly catalog = inject(CatalogService);
   private readonly cart = inject(CartService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -31,6 +32,18 @@ export class Productcomponent {
   });
   protected readonly qty = linkedSignal({ source: this.id, computation: () => 1 });
   protected readonly sizeError = signal(0);
+  protected readonly loadError = signal<string | null>(null);
+
+  constructor() {
+    // Modo API: si se entra directamente a /producto/:id, se consulta el producto al backend.
+    effect(() => {
+      const id = this.id();
+      untracked(() => {
+        this.loadError.set(null);
+        this.catalog.fetchById(id).subscribe({ error: (err) => this.loadError.set(apiMessage(err, 'No fue posible cargar el producto.')) });
+      });
+    });
+  }
   protected readonly savings = computed(() => {
     const p = this.product();
     return p?.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
