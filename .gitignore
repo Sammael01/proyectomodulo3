@@ -1,109 +1,50 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# ==========================================
-# ANGULAR
-# ==========================================
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
 /dist/
-/out-tsc/
-/tmp/
-/coverage/
-/e2e/test-output/
-/.angular/
-.angular/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
 
 # ==========================================
-# NODE.JS
+# JAVA COMPILED FILES AND ARTIFACTS
 # ==========================================
 
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# ==========================================
-# ANGULAR CLI
-# ==========================================
-
-/.angular-cli.json
-/.ng/
-
-# ==========================================
-# TYPESCRIPT
-# ==========================================
-
-*.tsbuildinfo
-
-# ==========================================
-# LOGS
-# ==========================================
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-logs/
-
-# ==========================================
-# JAVA / MAVEN
-# ==========================================
-
-**/target/
-**/build/
 *.class
+*.jar
+!/.mvn/wrapper/maven-wrapper.jar
+*.war
+*.ear
 
 # ==========================================
-# ENVIRONMENT VARIABLES
+# JAVA BUILD OUTPUT
 # ==========================================
 
-.env
-.env.*
-!.env.example
-
-# ==========================================
-# SPRING BOOT LOCAL CONFIGURATION
-# ==========================================
-
-**/application*.properties
-**/application*.yml
-**/application*.yaml
-
-# ==========================================
-# CREDENTIALS AND SECRET FILES
-# ==========================================
-
-credentials.json
-credentials.yaml
-credentials.yml
-secrets.json
-secrets.yaml
-secrets.yml
-client_secret*.json
-service-account*.json
-
-# ==========================================
-# PRIVATE KEYS AND CERTIFICATES
-# ==========================================
-
-*.pem
-*.key
-*.p12
-*.pfx
-*.jks
-*.keystore
-id_rsa
-id_ed25519
-
-# ==========================================
-# DATABASE BACKUPS
-# ==========================================
-
-*.dump
-*.bak
-*.backup
-
-# ==========================================
-# ECLIPSE LOCAL FILES
-# ==========================================
-
-**/.settings/
-**/.classpath
-**/.project
+bin/

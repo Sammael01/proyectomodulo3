@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import co.edu.unbosque.tstyle.user.enums.Role;
+import co.edu.unbosque.tstyle.enums.Role;
+import co.edu.unbosque.tstyle.model.User;
 
 /**
  * Pruebas unitarias para la entidad User.

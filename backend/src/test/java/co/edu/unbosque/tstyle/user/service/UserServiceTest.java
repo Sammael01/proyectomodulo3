@@ -28,6 +28,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+<<<<<<< HEAD
+import co.edu.unbosque.tstyle.dto.MessageResponse;
+import co.edu.unbosque.tstyle.dto.RegisterRequest;
+import co.edu.unbosque.tstyle.enums.Role;
+import co.edu.unbosque.tstyle.exception.DuplicateResourceException;
+import co.edu.unbosque.tstyle.model.User;
+import co.edu.unbosque.tstyle.repository.UserRepository;
+import co.edu.unbosque.tstyle.service.UserService;
+=======
 import co.edu.unbosque.tstyle.audit.enums.AuditEventType;
 import co.edu.unbosque.tstyle.audit.service.AuditService;
 import co.edu.unbosque.tstyle.email.EmailCenter;
@@ -40,6 +49,7 @@ import co.edu.unbosque.tstyle.security.dto.VerifyEmailRequest;
 import co.edu.unbosque.tstyle.user.enums.Role;
 import co.edu.unbosque.tstyle.user.model.User;
 import co.edu.unbosque.tstyle.user.repository.UserRepository;
+>>>>>>> b3d96ed4654d7773c3d07c2555796c9f2776c929
 
 /**
  * Pruebas unitarias para UserService.

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
+import co.edu.unbosque.tstyle.dto.RegisterRequest;
+
 /**
  * Pruebas unitarias para RegisterRequest.
  *
