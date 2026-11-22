@@ -1,9 +1,8 @@
+
 package co.edu.unbosque.tstyle.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import org.hibernate.annotations.ColumnDefault;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,176 +15,175 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * Representa un producto del catálogo de T Style.
+ * Es único por proveedor e identificador externo.
+ *
+ * @author Equipo T Style
+ */
 @Entity
 @Table(name = "product", uniqueConstraints = @UniqueConstraint(
-		name = "uk_product_provider_external",
-		columnNames = { "provider_id", "external_id" }))
+        name = "uk_product_provider_external",
+        columnNames = { "provider_id", "external_id" }))
 public class Product {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "provider_id", nullable = false)
-	private Provider provider;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "category_id", nullable = false)
-	private Category category;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "provider_id", nullable = false)
+    private Provider provider;
 
-	@Column(name = "external_id", nullable = false, length = 100)
-	private String externalId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
-	@Column(name = "name", nullable = false, length = 200)
-	private String name;
+    @Column(name = "external_id", nullable = false, length = 100)
+    private String externalId;
 
-	@Column(name = "description", length = 2000)
-	private String description;
+    @Column(name = "name", nullable = false, length = 200)
+    private String name;
 
-	@Column(name = "image_url", nullable = false, length = 500)
-	private String imageUrl;
+    @Column(name = "description", length = 2000)
+    private String description;
 
-	@Column(name = "price", nullable = false, precision = 12, scale = 2)
-	private BigDecimal price;
+    @Column(name = "image_url", nullable = false, length = 500)
+    private String imageUrl;
 
-	@Column(name = "currency", nullable = false, length = 3)
-	private String currency;
+    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
-	@Column(name = "external_url", nullable = false, length = 500)
-	private String externalUrl;
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency;
 
-	@Column(name = "provider_avalaible")
-	private Boolean providerAvalaible;
+    @Column(name = "external_url", nullable = false, length = 500)
+    private String externalUrl;
 
-	@Column(name = "last_synced_at", nullable = false)
-	private LocalDateTime lastSyncedAt;
+    @Column(name = "provider_avalaible")
+    private Boolean providerAvalaible;
 
-	@ColumnDefault("0")
-	@Column(name = "stock", nullable = false)
-	private int stock;
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 
-	@ColumnDefault("1")
-	@Column(name = "active", nullable = false)
-	private boolean active = true;
+    @Column(name = "stock", nullable = false)
+    private int stock = 0;
 
-	public Product() {
-	}
+    @Column(name = "last_synced_at", nullable = false)
+    private LocalDateTime lastSyncedAt;
 
-	public Product(String name, BigDecimal price, int stock) {
-		this.name = name;
-		this.price = price;
-		this.stock = stock;
-	}
+    protected Product() {
+    }
 
-	public Long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public Provider getProvider() {
-		return provider;
-	}
+    public Provider getProvider() {
+        return provider;
+    }
 
-	public void setProvider(Provider provider) {
-		this.provider = provider;
-	}
+    public void setProvider(Provider provider) {
+        this.provider = provider;
+    }
 
-	public Category getCategory() {
-		return category;
-	}
+    public Category getCategory() {
+        return category;
+    }
 
-	public void setCategory(Category category) {
-		this.category = category;
-	}
+    public void setCategory(Category category) {
+        this.category = category;
+    }
 
-	public String getExternalId() {
-		return externalId;
-	}
+    public String getExternalId() {
+        return externalId;
+    }
 
-	public void setExternalId(String externalId) {
-		this.externalId = externalId;
-	}
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public String getImageUrl() {
-		return imageUrl;
-	}
+    public String getImageUrl() {
+        return imageUrl;
+    }
 
-	public void setImageUrl(String imageUrl) {
-		this.imageUrl = imageUrl;
-	}
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 
-	public BigDecimal getPrice() {
-		return price;
-	}
+    public BigDecimal getPrice() {
+        return price;
+    }
 
-	public void setPrice(BigDecimal price) {
-		this.price = price;
-	}
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
 
-	public String getCurrency() {
-		return currency;
-	}
+    public String getCurrency() {
+        return currency;
+    }
 
-	public void setCurrency(String currency) {
-		this.currency = currency;
-	}
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 
-	public String getExternalUrl() {
-		return externalUrl;
-	}
+    public String getExternalUrl() {
+        return externalUrl;
+    }
 
-	public void setExternalUrl(String externalUrl) {
-		this.externalUrl = externalUrl;
-	}
+    public void setExternalUrl(String externalUrl) {
+        this.externalUrl = externalUrl;
+    }
 
-	public Boolean getProviderAvalaible() {
-		return providerAvalaible;
-	}
+    public Boolean getProviderAvalaible() {
+        return providerAvalaible;
+    }
 
-	public void setProviderAvalaible(Boolean providerAvalaible) {
-		this.providerAvalaible = providerAvalaible;
-	}
+    public void setProviderAvalaible(Boolean providerAvalaible) {
+        this.providerAvalaible = providerAvalaible;
+    }
 
-	public LocalDateTime getLastSyncedAt() {
-		return lastSyncedAt;
-	}
+    public boolean isActive() {
+        return active;
+    }
 
-	public void setLastSyncedAt(LocalDateTime lastSyncedAt) {
-		this.lastSyncedAt = lastSyncedAt;
-	}
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
-	public int getStock() {
-		return stock;
-	}
+    public int getStock() {
+        return stock;
+    }
 
-	public void setStock(int stock) {
-		this.stock = stock;
-	}
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
 
-	public boolean isActive() {
-		return active;
-	}
+    public LocalDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
 
-	public void setActive(boolean active) {
-		this.active = active;
-	}
+    public void setLastSyncedAt(LocalDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
+    }
 }

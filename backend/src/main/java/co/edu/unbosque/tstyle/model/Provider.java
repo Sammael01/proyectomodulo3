@@ -7,9 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Representa un proveedor de origen de los productos del catalogo
+ *
+ * @author Sebastián
+ */
+
 @Entity
 @Table(name = "provider")
 public class Provider {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -21,7 +28,14 @@ public class Provider {
 	private boolean active = true;
 
 	protected Provider() {
+
 	}
+
+	/**
+	 *
+	 * Crea un proveedor activo
+	 *
+	 */
 
 	public Provider(String name) {
 		this.name = name;
