@@ -38,6 +38,8 @@ class CurrentUserServiceTest {
 		currentUserService = new CurrentUserService(userRepository);
 		client = new User("Ana Pérez", "ana@tstyle.com", "hash", Role.CLIENT);
 		client.setId(1L);
+		// El User de la aplicación nace deshabilitado hasta verificar el correo; la prueba parte de una cuenta activa.
+		client.setEnabled(true);
 	}
 
 	@AfterEach
@@ -100,6 +102,7 @@ class CurrentUserServiceTest {
 	void requireAdminAcceptsAdministrators() {
 		User admin = new User("Admin", "admin@tstyle.com", "hash", Role.ADMIN);
 		admin.setId(2L);
+		admin.setEnabled(true);
 		authenticate("admin@tstyle.com", Role.ADMIN);
 		when(userRepository.findByEmail("admin@tstyle.com")).thenReturn(Optional.of(admin));
 
