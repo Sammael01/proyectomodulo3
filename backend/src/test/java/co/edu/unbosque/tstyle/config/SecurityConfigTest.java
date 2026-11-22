@@ -21,8 +21,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.test.web.servlet.MockMvc;
 
+import co.edu.unbosque.tstyle.security.controller.AuthController;
 import co.edu.unbosque.tstyle.security.service.AuthService;
 import co.edu.unbosque.tstyle.security.service.JwtService;
+import co.edu.unbosque.tstyle.user.controller.UserController;
 import co.edu.unbosque.tstyle.user.enums.Role;
 import co.edu.unbosque.tstyle.user.model.User;
 import co.edu.unbosque.tstyle.user.repository.UserRepository;
@@ -36,7 +38,7 @@ import co.edu.unbosque.tstyle.user.service.UserService;
  *
  * @author Equipo T Style
  */
-@WebMvcTest
+@WebMvcTest(controllers = { AuthController.class, UserController.class })
 @AutoConfigureMockMvc
 @Import({ SecurityConfig.class, SecurityConfigTest.TestConfig.class })
 class SecurityConfigTest {

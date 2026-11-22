@@ -1,6 +1,8 @@
 
 package co.edu.unbosque.tstyle.audit.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +16,7 @@ import co.edu.unbosque.tstyle.audit.model.AuditEvent;
  */
 @Repository
 public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
+
+	Page<AuditEvent> findByLocationIsNotNull(Pageable pageable);
 
 }

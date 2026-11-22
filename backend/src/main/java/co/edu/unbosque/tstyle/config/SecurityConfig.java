@@ -1,16 +1,24 @@
 
 package co.edu.unbosque.tstyle.config;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import co.edu.unbosque.tstyle.security.filter.JwtAuthenticationFilter;
 import co.edu.unbosque.tstyle.security.service.JwtService;
@@ -45,7 +53,7 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
 			throws Exception {
 
-		http.csrf(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
+		http.cors(Customizer.withDefaults()).csrf(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.exceptionHandling(
@@ -64,11 +72,40 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/users/register", "/api/users/verify-email",
 								"/api/users/resend-verification", "/api/auth/login", "/api/auth/forgot-password",
 								"/api/auth/reset-password")
+						.permitAll().requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**")
 						.permitAll().requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
 						.permitAll().requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
+	}
+
+	/**
+	 * Configura CORS para permitir únicamente los orígenes del frontend.
+	 *
+	 * Los orígenes se leen de la propiedad {@code tstyle.cors.allowed-origins}
+	 * (lista separada por comas). Si no se define, solo se permite el servidor de
+	 * desarrollo de Angular.
+	 *
+	 * @param allowedOrigins orígenes permitidos separados por comas
+	 * @return fuente de configuración CORS
+	 */
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource(
+			@Value("${tstyle.cors.allowed-origins:http://localhost:4200}") String allowedOrigins) {
+
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(",")).map(String::trim)
+				.filter(origin -> !origin.isEmpty()).toList());
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+		configuration.setExposedHeaders(List.of("Content-Disposition"));
+		configuration.setMaxAge(3600L);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/api/**", configuration);
+
+		return source;
 	}
 
 	/**

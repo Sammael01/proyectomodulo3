@@ -53,6 +53,9 @@ public class AuditEvent {
 	@Column(length = 50)
 	private String locationSource;
 
+	@Column(length = 255)
+	private String detail;
+
 	public AuditEvent() {
 	}
 
@@ -131,5 +134,13 @@ public class AuditEvent {
 
 	public void setLocationSource(String locationSource) {
 		this.locationSource = locationSource;
+	}
+
+	public String getDetail() {
+		return detail;
+	}
+
+	public void setDetail(String detail) {
+		this.detail = detail;
 	}
 }

@@ -1,6 +1,8 @@
 
 package co.edu.unbosque.tstyle.audit.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,5 +46,25 @@ public class AuditService {
 		AuditEvent event = new AuditEvent(eventType, userId, userEmail, ipAddress, location, locationSource);
 
 		auditEventRepository.save(event);
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void registerEvent(AuditEventType eventType, Long userId, String userEmail, String ipAddress,
+			String location, String locationSource, String detail) {
+
+		AuditEvent event = new AuditEvent(eventType, userId, userEmail, ipAddress, location, locationSource);
+		event.setDetail(detail == null || detail.length() <= 255 ? detail : detail.substring(0, 255));
+
+		auditEventRepository.save(event);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<AuditEvent> findAll(Pageable pageable) {
+		return auditEventRepository.findAll(pageable);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<AuditEvent> findWithLocation(Pageable pageable) {
+		return auditEventRepository.findByLocationIsNotNull(pageable);
 	}
 }

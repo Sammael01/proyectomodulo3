@@ -3,12 +3,16 @@ package co.edu.unbosque.tstyle.exception;
 
 import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -23,6 +27,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * Maneja errores relacionados con reglas de negocio.
@@ -141,6 +147,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(
+            UnauthorizedException exception, WebRequest request) {
+
+        return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(
+            ForbiddenException exception, WebRequest request) {
+
+        return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(
+            HttpMessageNotReadableException exception, WebRequest request) {
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST",
+                "El cuerpo de la solicitud no es válido o está mal formado", request);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception, WebRequest request) {
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST",
+                "El valor del parámetro '" + exception.getName() + "' no es válido", request);
+    }
+
     /**
      * Maneja errores inesperados que no tienen un tratamiento específico.
      *
@@ -152,6 +188,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneralException(
             Exception exception, WebRequest request) {
 
+        if (exception instanceof org.springframework.web.ErrorResponse springError
+                && springError.getStatusCode().is4xxClientError()) {
+
+            HttpStatus status = HttpStatus.resolve(springError.getStatusCode().value());
+            if (status == null) {
+                status = HttpStatus.BAD_REQUEST;
+            }
+            return buildResponse(status, status.name(),
+                    status == HttpStatus.NOT_FOUND
+                            ? "El recurso solicitado no existe"
+                            : "La solicitud no es válida",
+                    request);
+        }
+
+        LOGGER.error("Error inesperado procesando la solicitud", exception);
+
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -161,5 +213,19 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(
+            HttpStatus status, String error, String message, WebRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                error,
+                message,
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        return ResponseEntity.status(status).body(response);
     }
 }

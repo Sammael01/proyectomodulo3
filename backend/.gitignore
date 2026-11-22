@@ -1,50 +1,75 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# ANGULAR Y NODE
+node_modules/
+dist/
+.angular/
+.out-tsc/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+logs/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-
-# ==========================================
-# JAVA COMPILED FILES AND ARTIFACTS
-# ==========================================
-
+# JAVA Y MAVEN
+**/target/
+**/build/
 *.class
-*.jar
-!/.mvn/wrapper/maven-wrapper.jar
 *.war
 *.ear
 
-# ==========================================
-# JAVA BUILD OUTPUT
-# ==========================================
+# MAVEN WRAPPER
+**/.mvn/wrapper/maven-wrapper.jar
+!**/.mvn/wrapper/maven-wrapper.jar
 
-bin/
+# ARCHIVOS DE ENTORNO
+.env
+.env.*
+!.env.example
+
+# CONFIGURACION SENSIBLE
+**/application.properties
+**/application-local.properties
+*/application.yml
+*/application.yaml
+
+# CREDENCIALES Y SECRETOS
+credentials.json
+credentials.yaml
+credentials.yml
+secrets.json
+secrets.yaml
+secrets.yml
+client_secret*.json
+service-account*.json
+
+# LLAVES Y CERTIFICADOS
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+
+# RESPALDOS DE BASE DE DATOS
+*.dump
+*.bak
+*.backup
+
+# IDE
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+*.iml
+*.iws
+*.ipr
+.factorypath
+.apt_generated/
+.sts4-cache/
+.springBeans
+.DS_Store
+Thumbs.db
