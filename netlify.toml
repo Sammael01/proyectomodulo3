@@ -1,0 +1,9 @@
+# The Angular app lives in the t-style/ subfolder; build it from there.
+[build]
+  base = "t-style"
+  command = "npm ci && npm run build"
+  publish = "dist/t-style/browser"
+
+# Angular 22 requires Node ^22.22.3 || ^24.15.0.
+[build.environment]
+  NODE_VERSION = "22"
