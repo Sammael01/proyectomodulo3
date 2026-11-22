@@ -1,0 +1,73 @@
+<section class="ts-hero">
+  <div class="ts-shape ts-shape-olive d-none d-md-block animate__animated animate__fadeInDown animate__slow"></div>
+  <div class="ts-shape ts-shape-orange d-none d-md-block animate__animated animate__fadeInUp animate__slow"></div>
+  <span class="ts-tag font-display d-none d-md-inline-block animate__animated animate__bounceIn animate__delay-1s">{{ tag() }}</span>
+
+  <div class="container-fluid px-4 px-lg-5 h-100">
+    <div class="row h-100 align-items-center">
+      <div class="col-12 col-md-7 col-lg-5 offset-lg-0 ps-lg-5 ts-content">
+        <span class="ts-eyebrow animate__animated animate__fadeInDown">{{ eyebrow() }}</span>
+
+        <h1 class="ts-title font-display">
+          @for (line of titleLines(); track line.text; let i = $index) {
+            <span class="ts-title-line animate__animated animate__fadeInLeft ts-stagger" [style.--i]="i + 1"
+              [class.ts-title-accent]="line.accent">{{ line.text }}</span>
+          }
+        </h1>
+
+        <p class="ts-description animate__animated animate__fadeIn ts-stagger" [style.--i]="5">{{ description() }}</p>
+
+        <div class="d-flex flex-wrap gap-3 animate__animated animate__fadeInUp ts-stagger" [style.--i]="6">
+          <a routerLink="/coleccion" class="btn ts-btn">{{ cta() }}</a>
+          <a routerLink="/videos" class="btn ts-btn-outline"><i class="bi bi-play-fill"></i>T-Style TV</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ts-section">
+  <div class="container-fluid px-4 px-lg-5">
+    <div class="row g-3">
+      @for (c of categories(); track c.name; let i = $index) {
+        <div class="col-6 col-md-4 col-xl">
+          <a [routerLink]="['/coleccion']" [queryParams]="{ categoria: c.name }"
+            class="card h-100 text-decoration-none ts-catlink animate__animated animate__fadeInUp ts-stagger" [style.--i]="i">
+            <div class="card-body">
+              <span class="font-display fs-4 d-block text-body">{{ c.name }}</span>
+              <small class="text-body-tertiary">{{ c.count }} productos <i class="bi bi-arrow-right"></i></small>
+            </div>
+          </a>
+        </div>
+      }
+    </div>
+
+    <div class="d-flex align-items-end justify-content-between gap-3 mb-4 mt-5">
+      <div>
+        <span class="ts-eyebrow">Recién llegados</span>
+        <h2 class="ts-h2 font-display">Novedades</h2>
+      </div>
+      <a routerLink="/coleccion" [queryParams]="{ nuevos: 1 }" class="link-warning text-decoration-none fw-medium">Ver todo <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row g-3 g-lg-4">
+      @for (p of featured(); track p.id; let i = $index) {
+        <div class="col-6 col-lg-3 animate__animated animate__fadeInUp ts-stagger" [style.--i]="i">
+          <app-productcardcomponent [product]="p" />
+        </div>
+      }
+    </div>
+
+    <div class="card mt-5 ts-banner animate__animated animate__fadeIn">
+      <div class="card-body d-flex align-items-center justify-content-between gap-4 p-4 p-lg-5">
+        <div>
+          <span class="ts-eyebrow">Plataforma de video</span>
+          <h2 class="ts-h2 font-display mb-3">Mira el look, cómpralo al instante</h2>
+          <p class="text-body-secondary mb-4">Lookbooks, backstage y guías de estilo con los productos de cada video listos para agregar al carrito.</p>
+          <a routerLink="/videos" class="btn ts-btn"><i class="bi bi-play-fill"></i>Ir a T-Style TV</a>
+        </div>
+        <div class="ts-banner-art d-none d-md-flex animate__animated animate__pulse animate__infinite animate__slow"><i class="bi bi-play-btn"></i></div>
+      </div>
+    </div>
+  </div>
+</section>

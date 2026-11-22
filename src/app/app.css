@@ -1,0 +1,25 @@
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ts-black);
+  overflow: hidden;
+}
+
+.app-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 55%;
+  background: linear-gradient(90deg, rgba(24, 25, 25, 0) 0%, #2a2c2b 55%, #353836 75%, #262827 100%);
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-main {
+  position: relative;
+  flex: 1;
+  z-index: 1;
+}

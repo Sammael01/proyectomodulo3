@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.border-dashed {
+  border-style: dashed;
+}
+
+.ts-thumb {
+  flex: 0 0 96px;
+  height: 110px;
+  font-size: 1.4rem;
+}
+
+.ts-thumb-sm {
+  flex-basis: 60px;
+  height: 68px;
+  font-size: 1rem;
+}
+
+.ts-qty {
+  min-width: 2.5rem;
+  opacity: 1 !important;
+  color: var(--ts-light) !important;
+}
+
+.ts-summary {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.ts-add {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+@media (max-width: 575px) {
+  .ts-item {
+    flex-wrap: wrap;
+  }
+
+  .ts-thumb {
+    flex-basis: 72px;
+    height: 84px;
+  }
+
+  .ts-price {
+    width: 100%;
+    text-align: left !important;
+  }
+}

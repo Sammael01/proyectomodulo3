@@ -1,0 +1,115 @@
+<section class="ts-page">
+  <div class="container-fluid px-4 px-lg-5">
+    @if (product(); as p) {
+      <nav aria-label="breadcrumb" class="animate__animated animate__fadeIn">
+        <ol class="breadcrumb small text-uppercase">
+          <li class="breadcrumb-item"><a routerLink="/" class="link-secondary text-decoration-none">Inicio</a></li>
+          <li class="breadcrumb-item"><a routerLink="/coleccion" class="link-secondary text-decoration-none">Colección</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ p.category }}</li>
+        </ol>
+      </nav>
+
+      @for (key of [p.id]; track key) {
+        <div class="row g-4 g-lg-5 mt-1">
+          <div class="col-12 col-lg-6 animate__animated animate__zoomIn">
+            <div class="ts-gallery ts-art border" [style.--art]="p.swatch">
+              <i class="bi bi-tag"></i>
+              <span class="position-absolute top-0 start-0 m-3 d-flex gap-1">
+                @if (p.isNew) {
+                  <span class="badge text-bg-warning">Nuevo</span>
+                }
+                @if (savings()) {
+                  <span class="badge text-bg-danger">-{{ savings() }}%</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-6 animate__animated animate__fadeInRight">
+            <span class="ts-eyebrow">{{ p.category }}</span>
+            <h1 class="ts-title font-display">{{ p.name }}</h1>
+
+            <div class="d-flex align-items-baseline gap-3 fs-3 text-warning fw-semibold">
+              {{ p.price | money }}
+              @if (p.oldPrice) {
+                <s class="fs-6 fw-normal text-body-tertiary">{{ p.oldPrice | money }}</s>
+              }
+            </div>
+
+            <p class="text-body-secondary my-4 lh-lg">{{ p.description }}</p>
+
+            <div class="row row-cols-auto g-4 mb-4">
+              <div class="col">
+                <div class="form-label mb-1">Color</div>
+                <span class="d-inline-flex align-items-center gap-2"><span class="ts-dot border" [style.background]="p.swatch"></span>{{ p.color }}</span>
+              </div>
+              <div class="col">
+                <div class="form-label mb-1">Disponibilidad</div>
+                <span [class.text-danger]="p.stock > 0 && p.stock <= 10">
+                  {{ p.stock <= 0 ? 'Agotado' : p.stock <= 10 ? 'Últimas ' + p.stock + ' unidades' : 'En stock' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="form-label">Talla</div>
+            @for (k of [sizeError()]; track k) {
+              <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Talla"
+                [class.animate__animated]="k > 0" [class.animate__headShake]="k > 0">
+                @for (s of p.sizes; track s) {
+                  <input type="radio" class="btn-check" name="size" [id]="'size-' + s" [checked]="size() === s" (change)="pickSize(s)" />
+                  <label class="btn btn-outline-secondary ts-size" [for]="'size-' + s">{{ s }}</label>
+                }
+              </div>
+              @if (k > 0) {
+                <div class="invalid-feedback d-block">Selecciona una talla para continuar.</div>
+              }
+            }
+
+            <div class="d-flex flex-wrap align-items-stretch gap-3 mt-4">
+              <div class="btn-group" role="group" aria-label="Cantidad">
+                <button type="button" class="btn btn-outline-secondary" (click)="changeQty(-1)" [disabled]="qty() <= 1" aria-label="Restar"><i class="bi bi-dash"></i></button>
+                <span class="btn btn-outline-secondary disabled ts-qty">{{ qty() }}</span>
+                <button type="button" class="btn btn-outline-secondary" (click)="changeQty(1)" [disabled]="qty() >= maxQty()" aria-label="Sumar"><i class="bi bi-plus"></i></button>
+              </div>
+              <button type="button" class="btn ts-btn flex-grow-1" (click)="add()" [disabled]="p.stock <= 0">
+                <i class="bi bi-bag-plus"></i>Agregar al carrito
+              </button>
+              <button type="button" class="btn ts-btn-outline" (click)="add(true)" [disabled]="p.stock <= 0">Comprar ahora</button>
+            </div>
+
+            <ul class="list-inline border-top pt-4 mt-4 small text-body-secondary">
+              <li class="list-inline-item me-4 mb-2"><i class="bi bi-truck text-warning me-2"></i>Envío gratis desde $150.000</li>
+              <li class="list-inline-item me-4 mb-2"><i class="bi bi-arrow-repeat text-warning me-2"></i>Cambios hasta 30 días</li>
+              <li class="list-inline-item mb-2"><i class="bi bi-shield-check text-warning me-2"></i>Pago 100% seguro</li>
+            </ul>
+          </div>
+        </div>
+      }
+
+      @if (related().length) {
+        <h2 class="font-display fs-2 mt-5 mb-4">También te puede gustar</h2>
+        <div class="row g-3 g-lg-4">
+          @for (r of related(); track r.id; let i = $index) {
+            <div class="col-6 col-lg-3 animate__animated animate__fadeInUp ts-stagger" [style.--i]="i">
+              <app-productcardcomponent [product]="r" />
+            </div>
+          }
+        </div>
+      }
+    } @else if (catalog.loading()) {
+      <div class="text-center py-5 text-body-secondary"><span class="spinner-border" aria-hidden="true"></span><p class="mt-3">Cargando producto…</p></div>
+    } @else if (loadError()) {
+      <div class="text-center py-5">
+        <div class="alert alert-danger d-inline-block" role="alert">{{ loadError() }}</div>
+        <div><a routerLink="/coleccion" class="btn ts-btn mt-3">Ver colección</a></div>
+      </div>
+    } @else {
+      <div class="text-center py-5 animate__animated animate__fadeIn">
+        <i class="bi bi-question-square display-4 text-warning d-block mb-3 animate__animated animate__wobble"></i>
+        <h1 class="font-display">Producto no encontrado</h1>
+        <p class="text-body-secondary">Es posible que ya no esté disponible.</p>
+        <a routerLink="/coleccion" class="btn ts-btn">Ver colección</a>
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,10 @@
+# Configuración de Netlify para el frontend T-Style.
+# En Netlify, "Base directory" debe apuntar a la carpeta que contiene este archivo (t-style).
+[build]
+  command = "npm run build"
+  publish = "dist/t-style/browser"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# La regla SPA vive en public/_redirects (/* /index.html 200), que Angular copia a dist/t-style/browser.

@@ -1,0 +1,177 @@
+<section class="ts-page">
+  <div class="container-fluid px-4 px-lg-5">
+    @if (order(); as o) {
+      <div class="ts-done animate__animated animate__zoomIn">
+        <i class="bi bi-bag-check display-3 text-warning d-block mb-3 animate__animated animate__bounceIn animate__delay-1s"></i>
+        <span class="ts-eyebrow">Pedido {{ o.id }}</span>
+        <h1 class="ts-heading mb-3">¡Gracias por tu compra!</h1>
+        <p class="text-body-secondary">Enviaremos la confirmación a <strong>{{ o.userEmail }}</strong>. Tu pedido llegará a {{ o.shippingInfo.city }}, {{ o.shippingInfo.department }}.</p>
+        <ul class="list-group text-start my-4">
+          @for (i of o.items; track i.productId + i.size) {
+            <li class="list-group-item d-flex align-items-center gap-3">
+              <span class="ts-sw" [style.background]="i.swatch"></span>
+              <span class="flex-grow-1">{{ i.name }} <small class="text-body-secondary">· Talla {{ i.size }} · x{{ i.qty }}</small></span>
+              <span>{{ i.price * i.qty | money }}</span>
+            </li>
+          }
+          <li class="list-group-item d-flex fw-semibold fs-5"><span class="flex-grow-1">{{ simulatedPayment && o.payment !== 'cod' ? 'Total (pago simulado)' : 'Total' }}</span><span class="text-warning">{{ o.total | money }}</span></li>
+        </ul>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+          <a routerLink="/perfil" fragment="pedidos" class="btn ts-btn">Ver mis pedidos</a>
+          <a routerLink="/coleccion" class="btn ts-btn-outline">Seguir comprando</a>
+        </div>
+      </div>
+    } @else {
+      <div class="animate__animated animate__fadeInDown">
+        <a routerLink="/carrito" class="btn btn-sm btn-link link-light text-uppercase px-0"><i class="bi bi-arrow-left me-2"></i>Volver al carrito</a>
+        <div><span class="ts-eyebrow mt-3">Último paso</span></div>
+        <h1 class="ts-heading">Checkout</h1>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="row g-4 g-lg-5">
+          <div class="col-12 col-lg-7">
+            <div class="card mb-4 animate__animated animate__fadeInLeft"><div class="card-body p-4">
+              <h2 class="ts-step"><span>1</span>Datos de envío</h2>
+              <div class="row g-3">
+                <div class="col-12 col-md-7">
+                  <label class="form-label" for="fullName">Nombre completo</label>
+                  <input id="fullName" class="form-control" formControlName="fullName" autocomplete="name" [class.is-invalid]="invalid('fullName')" />
+                  @if (invalid('fullName')) { <div class="invalid-feedback d-block">Ingresa tu nombre completo.</div> }
+                </div>
+                <div class="col-12 col-md-5">
+                  <label class="form-label" for="phone">Celular</label>
+                  <input id="phone" class="form-control" formControlName="phone" inputmode="numeric" maxlength="10" placeholder="3001234567"
+                    autocomplete="tel" [class.is-invalid]="invalid('phone')" />
+                  @if (invalid('phone')) { <div class="invalid-feedback d-block">Celular colombiano de 10 dígitos.</div> }
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="address">Dirección</label>
+                  <input id="address" class="form-control" formControlName="address" placeholder="Calle 00 # 00-00, apto 000"
+                    autocomplete="street-address" [class.is-invalid]="invalid('address')" />
+                  @if (invalid('address')) { <div class="invalid-feedback d-block">Ingresa una dirección válida.</div> }
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="department">Departamento</label>
+                  <select id="department" class="form-select" formControlName="department" [class.is-invalid]="invalid('department')">
+                    <option value="" disabled>Selecciona</option>
+                    @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+                  </select>
+                  @if (invalid('department')) { <div class="invalid-feedback d-block">Selecciona un departamento.</div> }
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="city">Ciudad</label>
+                  <input id="city" class="form-control" formControlName="city" autocomplete="address-level2" [class.is-invalid]="invalid('city')" />
+                  @if (invalid('city')) { <div class="invalid-feedback d-block">Ingresa la ciudad.</div> }
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="notes">Indicaciones (opcional)</label>
+                  <textarea id="notes" class="form-control" rows="2" formControlName="notes" placeholder="Torre, portería, horario de entrega…"></textarea>
+                </div>
+              </div>
+            </div></div>
+
+            <div class="card animate__animated animate__fadeInLeft ts-stagger" style="--i: 2"><div class="card-body p-4">
+              <h2 class="ts-step"><span>2</span>Método de pago</h2>
+              <div class="row g-2">
+                @for (m of payments; track m.key) {
+                  <div class="col-12 col-sm-4">
+                    <input type="radio" class="btn-check" formControlName="payment" [value]="m.key" [id]="'pay-' + m.key" [attr.disabled]="m.disabled ? '' : null" />
+                    <label class="btn btn-outline-secondary w-100 h-100 text-start ts-method" [for]="'pay-' + m.key">
+                      <i class="bi d-block fs-4 mb-1" [class]="m.icon"></i>
+                      <strong class="d-block">{{ m.label }}</strong>
+                      <small class="text-body-tertiary fw-normal">{{ m.hint }}</small>
+                    </label>
+                  </div>
+                }
+              </div>
+
+              @if (simulatedPayment && form.controls.payment.value !== 'cod') {
+                <div class="alert alert-warning d-flex gap-2 mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i>Pago simulado: no hay pasarela de pago conectada, no se realiza ningún cobro y los datos ingresados no se guardan ni se envían.</div>
+              }
+              @switch (form.controls.payment.value) {
+                @case ('card') {
+                  <div class="row g-3 mt-2 animate__animated animate__fadeIn">
+                    <div class="col-12">
+                      <label class="form-label" for="cardName">Nombre en la tarjeta</label>
+                      <input id="cardName" class="form-control" formControlName="cardName" autocomplete="cc-name" [class.is-invalid]="invalid('cardName')" />
+                      @if (invalid('cardName')) { <div class="invalid-feedback d-block">Ingresa el nombre del titular.</div> }
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label" for="cardNumber">Número de tarjeta</label>
+                      <input id="cardNumber" class="form-control" formControlName="cardNumber" inputmode="numeric" autocomplete="cc-number"
+                        placeholder="0000 0000 0000 0000" (input)="formatCard($any($event.target).value)" [class.is-invalid]="invalid('cardNumber')" />
+                      @if (invalid('cardNumber')) { <div class="invalid-feedback d-block">El número de tarjeta no es válido.</div> }
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label" for="cardExpiry">Vencimiento</label>
+                      <input id="cardExpiry" class="form-control" formControlName="cardExpiry" inputmode="numeric" autocomplete="cc-exp"
+                        placeholder="MM/AA" (input)="formatExpiry($any($event.target).value)" [class.is-invalid]="invalid('cardExpiry')" />
+                      @if (invalid('cardExpiry')) { <div class="invalid-feedback d-block">Fecha inválida o vencida.</div> }
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label" for="cardCvv">CVV</label>
+                      <input id="cardCvv" class="form-control" formControlName="cardCvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc"
+                        type="password" [class.is-invalid]="invalid('cardCvv')" />
+                      @if (invalid('cardCvv')) { <div class="invalid-feedback d-block">3 o 4 dígitos.</div> }
+                    </div>
+                  </div>
+                }
+                @case ('pse') {
+                  <div class="mt-3 animate__animated animate__fadeIn">
+                    <label class="form-label" for="bank">Banco</label>
+                    <select id="bank" class="form-select" formControlName="bank" [class.is-invalid]="invalid('bank')">
+                      <option value="" disabled>Selecciona tu banco</option>
+                      @for (b of ['Bancolombia', 'Banco de Bogotá', 'Davivienda', 'BBVA', 'Banco de Occidente', 'Nequi', 'Daviplata']; track b) {
+                        <option [value]="b">{{ b }}</option>
+                      }
+                    </select>
+                    @if (invalid('bank')) { <div class="invalid-feedback d-block">Selecciona un banco.</div> }
+                  </div>
+                }
+                @case ('cod') {
+                  <div class="alert alert-success d-flex gap-2 mt-3 mb-0 animate__animated animate__fadeIn"><i class="bi bi-info-circle"></i>Pagarás en efectivo al recibir tu pedido.</div>
+                }
+              }
+            </div></div>
+          </div>
+
+          <div class="col-12 col-lg-5">
+            <aside class="card ts-summary animate__animated animate__fadeInRight"><div class="card-body p-4">
+              <h2 class="font-display fs-4 mb-3">Tu pedido</h2>
+              <ul class="list-group list-group-flush mb-4">
+                @for (item of cart.items(); track item.productId + item.size) {
+                  <li class="list-group-item px-0 d-flex align-items-center gap-3">
+                    <span class="ts-sw" [style.background]="item.product.swatch"></span>
+                    <span class="flex-grow-1">{{ item.product.name }}<small class="d-block text-body-secondary">Talla {{ item.size }} · x{{ item.qty }}</small></span>
+                    <span>{{ item.qty * item.product.price | money }}</span>
+                  </li>
+                }
+                <li class="list-group-item px-0 d-flex justify-content-between"><span>Subtotal</span><span>{{ cart.subtotal() | money }}</span></li>
+                @if (cart.discount() > 0) {
+                  <li class="list-group-item px-0 d-flex justify-content-between text-warning"><span>Descuento ({{ cart.coupon() }})</span><span>-{{ cart.discount() | money }}</span></li>
+                }
+                <li class="list-group-item px-0 d-flex justify-content-between"><span>Envío</span><span>{{ cart.shipping() === 0 ? 'Gratis' : (cart.shipping() | money) }}</span></li>
+                <li class="list-group-item px-0 d-flex justify-content-between fs-5 fw-semibold"><span>Total</span><span class="text-warning">{{ cart.total() | money }}</span></li>
+              </ul>
+              <button type="submit" class="btn ts-btn w-100" [disabled]="processing()">
+                @if (processing()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Procesando pedido…
+                } @else {
+                  <i class="bi bi-lock"></i>Confirmar pedido · {{ cart.total() | money }}
+                }
+              </button>
+              @if (submitError()) {
+                <div class="alert alert-danger mt-3 mb-0 animate__animated animate__headShake" role="alert">{{ submitError() }}</div>
+              }
+              @if (submitted() && form.invalid) {
+                <div class="invalid-feedback d-block text-center animate__animated animate__headShake">Revisa los campos marcados.</div>
+              }
+              <div class="form-text text-center">Simulación de pago: no se realizan cobros reales.</div>
+            </div></aside>
+          </div>
+        </div>
+      </form>
+    }
+  </div>
+</section>
