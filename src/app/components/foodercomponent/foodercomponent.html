@@ -1,0 +1,19 @@
+<footer>
+  <div class="ts-features">
+    <div class="container-fluid px-4 px-lg-5">
+      <div class="row text-center">
+        @for (f of features(); track f.text) {
+          <div class="col-6 col-md-3 py-3">
+            <span class="ts-feature" [class.ts-feature-accent]="f.accent">
+              <i class="bi me-2" [class]="f.icon"></i>{{ f.text }}
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="ts-bottom text-center py-2">
+    <small>&copy; {{ year }} T-Style. Todos los derechos reservados.</small>
+  </div>
+</footer>

@@ -1,0 +1,149 @@
+<section class="ts-page">
+  <div class="container-fluid px-4 px-lg-5">
+    <div class="animate__animated animate__fadeInDown">
+      <span class="ts-eyebrow">Panel</span>
+      <h1 class="ts-heading">Administración</h1>
+    </div>
+
+    @if (catalog.source === 'local' || orders.source === 'local') {
+      <div class="alert alert-secondary d-flex gap-2 small" role="status"><i class="bi bi-info-circle"></i>Modo demostración: {{ catalog.source === 'local' ? 'productos' : '' }}{{ catalog.source === 'local' && orders.source === 'local' ? ' y ' : '' }}{{ orders.source === 'local' ? 'pedidos' : '' }} se guardan solo en este navegador.</div>
+    }
+    @for (msg of [actionError() ?? catalog.error() ?? orders.error()]; track msg) {
+      @if (msg) { <div class="alert alert-danger" role="alert">{{ msg }}</div> }
+    }
+    @if (catalog.loading() || orders.loading()) {
+      <div class="d-flex align-items-center gap-2 text-body-secondary small mb-3"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Cargando datos…</div>
+    }
+
+    <div class="row g-3 mb-4">
+      @for (s of statCards(); track s.label; let i = $index) {
+        <div class="col-6 col-lg-3 animate__animated animate__zoomIn ts-stagger" [style.--i]="i">
+          <div class="card h-100">
+            <div class="card-body">
+              <small class="form-label d-block mb-1">{{ s.label }}</small>
+              <span class="font-display fs-2" [class]="s.tone">{{ s.value }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" role="tab" [class.active]="tab() === 'products'" (click)="tab.set('products')"><i class="bi bi-box-seam me-2"></i>Productos</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" role="tab" [class.active]="tab() === 'orders'" (click)="tab.set('orders')"><i class="bi bi-receipt me-2"></i>Pedidos</button>
+      </li>
+    </ul>
+
+    @if (tab() === 'products') {
+      <div class="animate__animated animate__fadeIn animate__faster">
+        <div class="d-flex flex-wrap gap-2 justify-content-between mb-3">
+          <div class="input-group input-group-sm ts-filter">
+            <span class="input-group-text bg-transparent"><i class="bi bi-funnel"></i></span>
+            <input type="search" class="form-control" placeholder="Filtrar productos" [value]="filter()"
+              (input)="filter.set($any($event.target).value)" aria-label="Filtrar productos" />
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetCatalog()" [hidden]="catalog.source !== 'local'"><i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar</button>
+            <button type="button" class="btn btn-sm btn-warning text-dark" (click)="newProduct()"><i class="bi bi-plus-lg me-1"></i>Nuevo producto</button>
+          </div>
+        </div>
+
+        @if (formOpen()) {
+          <form class="card mb-4 animate__animated animate__fadeInDown animate__faster" [formGroup]="form" (ngSubmit)="save()" novalidate>
+            <div class="card-header py-3 fw-semibold text-uppercase small">{{ editing() ? 'Editar producto' : 'Nuevo producto' }}</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6"><label class="form-label" for="a-name">Nombre</label>
+                  <input id="a-name" class="form-control" formControlName="name" [class.is-invalid]="invalid('name')" /></div>
+                <div class="col-md-3"><label class="form-label" for="a-cat">Categoría</label>
+                  <input id="a-cat" class="form-control" formControlName="category" list="a-cats" [class.is-invalid]="invalid('category')" />
+                  <datalist id="a-cats">@for (c of catalog.categories(); track c) { <option [value]="c"></option> }</datalist></div>
+                <div class="col-md-3"><label class="form-label" for="a-stock">Stock</label>
+                  <input id="a-stock" type="number" min="0" class="form-control" formControlName="stock" [class.is-invalid]="invalid('stock')" /></div>
+                <div class="col-md-3"><label class="form-label" for="a-price">Precio (COP)</label>
+                  <div class="input-group"><span class="input-group-text">$</span>
+                  <input id="a-price" type="number" min="0" step="100" class="form-control" formControlName="price" [class.is-invalid]="invalid('price')" /></div></div>
+                <div class="col-md-3"><label class="form-label" for="a-old">Precio anterior</label>
+                  <div class="input-group"><span class="input-group-text">$</span>
+                  <input id="a-old" type="number" min="0" step="100" class="form-control" formControlName="oldPrice" /></div></div>
+                <div class="col-md-3"><label class="form-label" for="a-color">Color</label>
+                  <input id="a-color" class="form-control" formControlName="color" [class.is-invalid]="invalid('color')" /></div>
+                <div class="col-md-3"><label class="form-label" for="a-sw">Muestra</label>
+                  <input id="a-sw" type="color" class="form-control form-control-color w-100" formControlName="swatch" /></div>
+                <div class="col-md-6"><label class="form-label" for="a-sizes">Tallas (separadas por coma)</label>
+                  <input id="a-sizes" class="form-control" formControlName="sizes" [class.is-invalid]="invalid('sizes')" /></div>
+                <div class="col-md-6 d-flex align-items-end"><div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="a-new" formControlName="isNew" /><label class="form-check-label" for="a-new">Marcar como novedad</label></div></div>
+                <div class="col-12"><label class="form-label" for="a-desc">Descripción</label>
+                  <textarea id="a-desc" rows="3" class="form-control" formControlName="description" [class.is-invalid]="invalid('description')"></textarea></div>
+              </div>
+              @if (form.invalid && form.touched) {
+                <div class="invalid-feedback d-block animate__animated animate__headShake">Completa los campos marcados. El precio mínimo es $1.000.</div>
+              }
+            </div>
+            <div class="card-footer d-flex gap-2 justify-content-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancel()">Cancelar</button>
+              <button type="submit" class="btn btn-sm btn-warning text-dark" [disabled]="saving()">@if (saving()) { <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> } @else { <i class="bi bi-check2 me-1"></i> }Guardar</button>
+            </div>
+          </form>
+        }
+
+        <div class="table-responsive border">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+            <tbody>
+              @for (p of products(); track p.id) {
+                <tr class="animate__animated animate__fadeIn">
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="ts-sw ts-sw-sm" [style.background]="p.swatch"></span>
+                      <a [routerLink]="['/producto', p.id]" class="link-light text-decoration-none fw-medium">{{ p.name }}</a>
+                      @if (p.isNew) { <span class="badge text-bg-warning">Nuevo</span> }
+                    </div>
+                  </td>
+                  <td>{{ p.category }}</td>
+                  <td>{{ p.price | money }}</td>
+                  <td><span [class.text-danger]="p.stock <= 10">{{ p.stock }}</span></td>
+                  <td class="text-end text-nowrap">
+                    <div class="btn-group btn-group-sm">
+                      <button type="button" class="btn btn-outline-secondary" (click)="edit(p)" [attr.aria-label]="'Editar ' + p.name"><i class="bi bi-pencil"></i></button>
+                      <button type="button" class="btn btn-outline-danger" (click)="remove(p)" [disabled]="saving()" [attr.aria-label]="'Eliminar ' + p.name"><i class="bi bi-trash3"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-body-secondary text-center py-4">No hay productos.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else {
+      <div class="table-responsive border animate__animated animate__fadeIn animate__faster">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Ítems</th><th>Total</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (o of orders.all(); track o.id) {
+              <tr>
+                <td><strong>{{ o.id }}</strong></td>
+                <td>{{ o.shippingInfo.fullName }}<small class="d-block text-body-secondary">{{ o.userEmail }}</small></td>
+                <td>{{ o.date | date: 'd MMM y' }}</td>
+                <td>{{ o.items.length }}</td>
+                <td>{{ o.total | money }}</td>
+                <td>
+                  <select class="form-select form-select-sm" [value]="o.status" (change)="setStatus(o.id, $any($event.target).value)" [disabled]="saving()" aria-label="Estado">
+                    @for (s of statuses; track s) { <option [value]="s" [selected]="s === o.status">{{ s }}</option> }
+                  </select>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="text-body-secondary text-center py-4">Todavía no hay pedidos registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>
