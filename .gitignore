@@ -1,75 +1,20 @@
 
-# ==========================================
-# ANGULAR
-# ==========================================
-
-/dist/
-/out-tsc/
-/tmp/
-/coverage/
-/e2e/test-output/
-/.angular/
-.angular/
-
-# ==========================================
-# NODE.JS
-# ==========================================
-
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# ==========================================
-# ANGULAR CLI
-# ==========================================
-
-/.angular-cli.json
-/.ng/
-
-# ==========================================
-# TYPESCRIPT
-# ==========================================
-
-*.tsbuildinfo
-
-# ==========================================
-# LOGS
-# ==========================================
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-logs/
-
-# ==========================================
 # JAVA / MAVEN
-# ==========================================
-
 **/target/
 **/build/
 *.class
 
-# ==========================================
 # ENVIRONMENT VARIABLES
-# ==========================================
-
 .env
 .env.*
 !.env.example
 
-# ==========================================
 # SPRING BOOT LOCAL CONFIGURATION
-# ==========================================
-
 **/application*.properties
 **/application*.yml
 **/application*.yaml
 
-# ==========================================
 # CREDENTIALS AND SECRET FILES
-# ==========================================
-
 credentials.json
 credentials.yaml
 credentials.yml
@@ -79,10 +24,7 @@ secrets.yml
 client_secret*.json
 service-account*.json
 
-# ==========================================
 # PRIVATE KEYS AND CERTIFICATES
-# ==========================================
-
 *.pem
 *.key
 *.p12
@@ -92,18 +34,12 @@ service-account*.json
 id_rsa
 id_ed25519
 
-# ==========================================
 # DATABASE BACKUPS
-# ==========================================
-
 *.dump
 *.bak
 *.backup
 
-# ==========================================
 # ECLIPSE LOCAL FILES
-# ==========================================
-
 **/.settings/
 **/.classpath
 **/.project
